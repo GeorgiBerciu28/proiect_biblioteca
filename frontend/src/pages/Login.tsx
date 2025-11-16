@@ -8,11 +8,38 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [parola, setParola] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/");
+    setError("");
+
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password: parola,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.id) {
+        localStorage.setItem("user", JSON.stringify(data));
+        alert(`Bine ai venit, ${data.firstName}! (Rol: ${data.role})`);
+        navigate("/");
+      } else {
+        setError(data.message || "Email sau parolă greșită!");
+      }
+    } catch (error) {
+      setError("Eroare de conexiune la server!");
+      console.error("Error:", error);
+    }
   };
 
   return (
@@ -24,8 +51,6 @@ export default function Login() {
         fontFamily: "Arial, sans-serif",
       }}
     >
-
-     
       <div
         style={{
           flex: 0.7,
@@ -34,7 +59,6 @@ export default function Login() {
           position: "relative",
         }}
       >
-        
         <img
           src="/book2.jpg"
           alt="Login background"
@@ -46,7 +70,6 @@ export default function Login() {
           }}
         />
 
-        
         <h1
           style={{
             position: "absolute",
@@ -64,7 +87,6 @@ export default function Login() {
         </h1>
       </div>
 
-      
       <div
         style={{
           flex: 0.3,
@@ -83,15 +105,22 @@ export default function Login() {
             marginBottom: "20px",
           }}
         >
-          Register customer
+          Sign In
         </h2>
+
+        {error && (
+          <p style={{ color: "red", fontSize: "0.9rem", marginBottom: "10px" }}>
+            {error}
+          </p>
+        )}
 
         <form style={{ marginTop: "20px", textAlign: "center" }} onSubmit={handleLogin}>
           <input
-            type="text"
+            type="email"
             placeholder="Email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
             style={{
               padding: "10px",
               width: "250px",
@@ -107,6 +136,7 @@ export default function Login() {
             placeholder="Password"
             value={parola}
             onChange={(e) => setParola(e.target.value)}
+            required
             style={{
               padding: "10px",
               width: "250px",
@@ -126,6 +156,7 @@ export default function Login() {
               border: "none",
               borderRadius: "20px",
               width: "150px",
+              cursor: "pointer",
             }}
           >
             Sign in
@@ -152,6 +183,7 @@ export default function Login() {
               border: "none",
               borderRadius: "20px",
               width: "150px",
+              cursor: "pointer",
             }}
           >
             Register

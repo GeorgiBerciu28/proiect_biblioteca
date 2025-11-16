@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Register() {
-
   useEffect(() => {
     document.title = "Create Account | MyLibrary";
   }, []);
@@ -12,19 +11,45 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [parola, setParola] = useState("");
   const [confirmParola, setConfirmParola] = useState("");
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
 
-    console.log("First name:", firstName);
-    console.log("Last name:", lastName);
-    console.log("Email:", email);
-    console.log("Parola:", parola);
-    console.log("Confirm parola:", confirmParola);
+    if (parola !== confirmParola) {
+      setError("Parolele nu coincid!");
+      return;
+    }
 
-    navigate("/login");
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email,
+          password: parola,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.id) {
+        alert(data.message || "Înregistrare reușită!");
+        navigate("/login");
+      } else {
+        setError(data.message || "Eroare la înregistrare!");
+      }
+    } catch (error) {
+      setError("Eroare de conexiune la server!");
+      console.error("Error:", error);
+    }
   };
 
   return (
@@ -32,7 +57,7 @@ export default function Register() {
       style={{
         width: "100%",
         height: "100vh",
-        backgroundImage: "url('/book3.jpg')",  
+        backgroundImage: "url('/book3.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         display: "flex",
@@ -41,7 +66,6 @@ export default function Register() {
         padding: "20px",
       }}
     >
-
       <div
         style={{
           backgroundColor: "white",
@@ -56,13 +80,19 @@ export default function Register() {
           Create New Customer Account
         </h2>
 
-        <form onSubmit={handleRegister}>
+        {error && (
+          <p style={{ color: "red", fontSize: "0.9rem", marginBottom: "10px" }}>
+            {error}
+          </p>
+        )}
 
+        <form onSubmit={handleRegister}>
           <input
             type="text"
             placeholder="First Name"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
+            required
             style={{
               padding: "10px",
               width: "250px",
@@ -77,6 +107,7 @@ export default function Register() {
             placeholder="Last Name"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
+            required
             style={{
               padding: "10px",
               width: "250px",
@@ -91,6 +122,7 @@ export default function Register() {
             placeholder="Email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
             style={{
               padding: "10px",
               width: "250px",
@@ -105,6 +137,7 @@ export default function Register() {
             placeholder="Password"
             value={parola}
             onChange={(e) => setParola(e.target.value)}
+            required
             style={{
               padding: "10px",
               width: "250px",
@@ -119,6 +152,7 @@ export default function Register() {
             placeholder="Confirm password"
             value={confirmParola}
             onChange={(e) => setConfirmParola(e.target.value)}
+            required
             style={{
               padding: "10px",
               width: "250px",
@@ -145,11 +179,8 @@ export default function Register() {
           >
             Sign up
           </button>
-
         </form>
       </div>
     </div>
   );
 }
-
-
