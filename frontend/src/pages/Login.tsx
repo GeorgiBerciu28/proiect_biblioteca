@@ -31,6 +31,7 @@ export default function Login() {
 
       if (data.id) {
         localStorage.setItem("user", JSON.stringify(data));
+        window.dispatchEvent(new Event("userChanged"));
         alert(`Bine ai venit, ${data.firstName}! (Rol: ${data.role})`);
         navigate("/");
       } else {
