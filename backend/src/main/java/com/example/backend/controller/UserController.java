@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -49,4 +50,20 @@ public class UserController {
 
         return ResponseEntity.ok("Updated successfully");
     }
+    @GetMapping("users/all")
+    public ResponseEntity<?> getAllUsersExceptAdmin() {
+        try {
+            List<User> users = userRepository.findAll()
+                    .stream()
+                    .filter(u -> u.getRole() != User.Role.MANAGER)
+                    .toList();
+
+            return ResponseEntity.ok(users);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Eroare la încărcarea utilizatorilor.");
+        }
+    }
+
 }

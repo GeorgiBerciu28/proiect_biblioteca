@@ -4,16 +4,21 @@ import { useState, useEffect } from "react";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-
 import AccountDetails from "./pages/AccountDetails";
-
+import AddBook from "./pages/admin/AddBook";
+import EditBook from "./pages/admin/EditBook";
+import DeleteBook from "./pages/admin/DeleteBook";
+import UserList from "./pages/admin/UserList";
+import Borrow from "./pages/Borrow";
 
 function App() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const [showBooksMenu, setShowBooksMenu] = useState(false);
 
-  const [currentUser, setCurrentUser] = useState<any>(null); // state-ul care retine userul logat
-  const [showMenu, setShowMenu] = useState(false);  // afiseaza / ascunde meniul user-ului
-  const [showAdminMenu, setShowAdminMenu] = useState(false); // afiseaza / ascunde meniul de Admin Dashboard
   const navigate = useNavigate();
+
 
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
@@ -28,16 +33,13 @@ function App() {
     return () => window.removeEventListener("userChanged", onUserChange);
   }, []);
 
-  // logout
   const handleLogout = () => {
     localStorage.removeItem("user");
     window.dispatchEvent(new Event("userChanged"));
-    navigate("/"); // trimite userul la pagina principala dupa logout
+    navigate("/");
   };
 
-  // meniul care apare cand pun mouse-ul pe iconita user-ului
   const renderMenu = () => {
-    // meniu pentru user nelogat
     if (!currentUser) {
       return (
         <Link
@@ -59,7 +61,7 @@ function App() {
         </Link>
       );
     }
-    // meniu pentru user logat 
+
     return (
       <div
         style={{
@@ -73,7 +75,6 @@ function App() {
           minWidth: "150px",
         }}
       >
-        {/* buton detalii cont */}
         <Link
           to="/account"
           style={{
@@ -89,7 +90,6 @@ function App() {
           Detalii cont
         </Link>
 
-        {/* buton delogare */}
         <button
           onClick={handleLogout}
           style={{
@@ -112,7 +112,6 @@ function App() {
 
   return (
     <>
-      {/* bara de navigare (deasupra paginii) */}
       <nav
         style={{
           width: "100%",
@@ -129,8 +128,24 @@ function App() {
         }}
       >
         <h2 style={{ margin: 0, color: "white", fontSize: "2.3rem" }}>📖 Library</h2>
+        {(!currentUser || currentUser.role === "USER") && (
+          <input
+            type="text"
+            placeholder="Caută o carte..."
+            style={{
+              marginLeft: "6px",
+              padding: "10px 15px",
+              width: "500px",
+              borderRadius: "20px",
+              border: "none",
+              outline: "none",
+              fontSize: "1rem",
+              backgroundColor: "white",
+              color: "black",
+            }}
+          />
+        )}
 
-        {/* daca userul logat este MANAGER → afisam Panou Administratie */}
         {currentUser?.role === "MANAGER" && (
           <div
             style={{
@@ -140,7 +155,6 @@ function App() {
             onMouseEnter={() => setShowAdminMenu(true)}
             onMouseLeave={() => setShowAdminMenu(false)}
           >
-            {/* buton panou administratie */}
             <div
               style={{
                 padding: "12px 22px",
@@ -157,7 +171,6 @@ function App() {
               Panou Administratie
             </div>
 
-            {/* meniul pentru administrator */}
             {showAdminMenu && (
               <div
                 style={{
@@ -170,16 +183,14 @@ function App() {
                   padding: "15px 20px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "8px",
+                  gap: "12px",
                   boxShadow: "0 4px 15px rgba(0,0,0,0.25)",
                   minWidth: "500px",
                   zIndex: 3000,
                 }}
               >
-
-                {/* buton 1 */}
                 <Link
-                  to="#"
+                  to="/admin/users"
                   style={{
                     color: "white",
                     textDecoration: "none",
@@ -191,20 +202,95 @@ function App() {
                   Vezi conturi utilizatori
                 </Link>
 
-                {/* buton 2 */}
-                <Link
-                  to="#"
-                  style={{
-                    color: "white",
-                    textDecoration: "none",
-                    fontWeight: "bold",
-                    fontSize: "1.5rem",
-                    marginTop: "12px",
-                    textAlign: "center"
-                  }}
+                <div
+                  style={{ position: "relative" }}
+                  onMouseEnter={() => setShowBooksMenu(true)}
+                  onMouseLeave={() => setShowBooksMenu(false)}
                 >
-                  Gestionare cărți
-                </Link>
+                  <div
+                    style={{
+                      color: "white",
+                      textDecoration: "none",
+                      fontWeight: "bold",
+                      fontSize: "1.5rem",
+                      textAlign: "center",
+                      cursor: "pointer"
+                    }}
+                  >
+                    Gestionare cărți
+                  </div>
+
+                  {showBooksMenu && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        backgroundColor: "#c27bd6",
+                        borderRadius: "12px",
+                        padding: "15px 20px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "12px",
+                        minWidth: "260px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.25)"
+                      }}
+                    >
+                     <Link
+                        to="/admin/books/add"
+                        style={{
+                          backgroundColor: "#a85acb",
+                          padding: "12px 20px",
+                          borderRadius: "10px",
+                          color: "white",
+                          textDecoration: "none",
+                          fontWeight: "bold",
+                          fontSize: "1.2rem",
+                          textAlign: "center",
+                          boxShadow: "0 3px 8px rgba(0,0,0,0.2)"
+                        }}
+                      >
+                         Adăugare carte
+                      </Link>
+
+                      <Link
+                        to="/admin/books/edit"
+                        style={{
+                          backgroundColor: "#a85acb",
+                          padding: "12px 20px",
+                          borderRadius: "10px",
+                          color: "white",
+                          textDecoration: "none",
+                          fontWeight: "bold",
+                          fontSize: "1.2rem",
+                          textAlign: "center",
+                          boxShadow: "0 3px 8px rgba(0,0,0,0.2)"
+                        }}
+                      >
+                         Editare carte
+                      </Link>
+
+                      <Link
+                        to="/admin/books/delete"
+                        style={{
+                          backgroundColor: "#a85acb",
+                          padding: "12px 20px",
+                          borderRadius: "10px",
+                          color: "white",
+                          textDecoration: "none",
+                          fontWeight: "bold",
+                          fontSize: "1.2rem",
+                          textAlign: "center",
+                          boxShadow: "0 3px 8px rgba(0,0,0,0.2)"
+                        }}
+                      >
+                         Ștergere carte
+                      </Link>
+
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -220,7 +306,6 @@ function App() {
           onMouseEnter={() => setShowMenu(true)}
           onMouseLeave={() => setShowMenu(false)}
         >
-          {/* imagine user / admin */}
           <div
             style={{
               width: "60px",
@@ -236,11 +321,9 @@ function App() {
             <img
               src={currentUser?.role === "MANAGER" ? "/admin.jpg" : "/user.png"}
               style={{ width: "40px", height: "40px" }}
-
             />
           </div>
 
-          {/* meniul pentru user */}
           {showMenu && (
             <div
               style={{
@@ -257,16 +340,54 @@ function App() {
         </div>
       </nav>
 
-      {/* pagini site */}
       <div style={{ paddingTop: "100px" }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/account" element={<AccountDetails />} />
+          <Route path="/admin/books/add" element={<AddBook />} />
+          <Route path="/admin/books/edit" element={<EditBook/>}/>
+          <Route path="/admin/books/delete" element={<DeleteBook/>}/>
+          <Route path="/admin/users" element={<UserList/>} />
+          <Route path="/borrow" element={<Borrow/>} />
         </Routes>
       </div>
+      <footer
+        style={{
+          width: "100%",
+          backgroundColor: "#5f2669ff",
+          padding: "100px 0",
+          textAlign: "left",
+          color: "white",
+          fontSize: "1.3rem",
+          fontWeight: "bold",
+          alignItems: "flex-start",
+          justifyContent: "flex-start",
+          bottom: 0,
+          left: 0,
+          zIndex: 900,
+        }}
+      >
+      <button
+        style={{
+        backgroundColor: "#8e5ba6",  // mov mai deschis
+        color: "white",
+        border: "none",
+        padding: "12px 30px",
+        borderRadius: "25px",
+        fontSize: "1.1rem",
+        fontWeight: "bold",
+        marginLeft: "10px",
+        cursor: "default", // nu poate fi apăsat ca să nu facă nimic
+      }}
+      >
+        About Us
+      </button>
+      </footer>
+
     </>
+
   );
 }
 
