@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -47,12 +48,12 @@ public class BookController {
                     data.getTitle(),
                     data.getAuthor(),
                     data.getYear(),
-                    data.getType(),
                     data.getDescription(),
                     data.getStatus(),
                     fileName
             );
 
+            book.setCategories(data.getCategories());
             bookRepository.save(book);
 
             return ResponseEntity.ok("Cartea a fost adaugată!");
@@ -71,6 +72,12 @@ public class BookController {
             return ResponseEntity.status(500).body("Eroare la încărcarea cărților.");
         }
     }
+
+    @GetMapping("/category/{category}")
+    public List<Book> getBooksByCategory(@PathVariable String category) {
+        return bookRepository.findByCategory(category);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteBook(@PathVariable Long id) {
         try {
@@ -106,8 +113,7 @@ public class BookController {
                 return ResponseEntity.status(404).body("Cartea nu există.");
             }
 
-
-            book.setType(data.getType());
+            book.setCategories(data.getCategories());
             book.setDescription(data.getDescription());
             book.setStatus(data.getStatus());
 

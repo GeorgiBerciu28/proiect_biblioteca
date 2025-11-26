@@ -5,22 +5,36 @@ interface Book {
   title: string;
   author: string;
   year: number;
-  type: string;
-  status: string;
   description: string;
+  status: string;
   image: string | null;
+  categories: string[];
 }
 
 export default function EditBook() {
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const [newType, setNewType] = useState("");
-  const [newStatus, setNewStatus] = useState("");
+
   const [newDescription, setNewDescription] = useState("");
+  const [newStatus, setNewStatus] = useState("disponibil");
+  const [newCategories, setNewCategories] = useState<string[]>([]);
   const [newImage, setNewImage] = useState<File | null>(null);
+
   const [message, setMessage] = useState("");
 
-  // Load books from backend
+  const categoryOptions = [
+    "clasica_literatura_universala",
+    "fantasy",
+    "science_fiction",
+    "thriller_mystery_crime",
+    "romantism",
+    "non_fictiune_eseuri_analize_jurnale",
+    "dezvoltare_personala_psihologie",
+    "istorie_biografii_memorii",
+    "stiinta_tehnologie",
+    "poezii"
+  ];
+
   const loadBooks = () => {
     fetch("http://localhost:8080/books")
       .then((res) => res.json())
@@ -30,34 +44,31 @@ export default function EditBook() {
 
   useEffect(() => {
     loadBooks();
-    document.title = "Stergere | Administratie";
+    document.title = "Editare carte | Administratie";
   }, []);
 
-  // Select book from table
   const handleSelect = (book: Book) => {
     setSelectedBook(book);
-    setNewType(book.type);
-    setNewStatus(book.status);
     setNewDescription(book.description);
-    setNewImage(null); // reset imagine
+    setNewStatus(book.status);
+    setNewCategories(book.categories || []);
+    setNewImage(null);
   };
 
-  // Upload new image
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setNewImage(e.target.files[0]);
     }
   };
 
-  // Submit update
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBook) return;
 
     const updateData = {
-      type: newType,
       description: newDescription,
-      status: newStatus
+      status: newStatus,
+      categories: newCategories
     };
 
     const formData = new FormData();
@@ -82,16 +93,13 @@ export default function EditBook() {
       setSelectedBook(null);
       loadBooks();
     } catch (err) {
-      console.error(err);
       setMessage("Eroare la actualizare.");
     }
   };
 
   return (
     <div style={{ padding: "40px" }}>
-      <h1 style={{ textAlign: "left", marginBottom: "25px" }}>
-        Tabelul cartilor din biblioteca
-      </h1>
+      <h1 style={{ marginBottom: "25px" }}>Tabelul cărților</h1>
 
       {message && (
         <div
@@ -108,7 +116,7 @@ export default function EditBook() {
         </div>
       )}
 
-      {/* --- TABEL CU CARTI --- */}
+      {/* TABEL CU CĂRȚI */}
       <table
         style={{
           width: "100%",
@@ -125,8 +133,8 @@ export default function EditBook() {
             <th style={th}>Titlu</th>
             <th style={th}>Autor</th>
             <th style={th}>An</th>
-            <th style={th}>Tip</th>
             <th style={th}>Status</th>
+            <th style={th}>Categorie</th>
             <th style={th}>Acțiune</th>
           </tr>
         </thead>
@@ -149,11 +157,12 @@ export default function EditBook() {
               <td style={td}>{b.title}</td>
               <td style={td}>{b.author}</td>
               <td style={td}>{b.year}</td>
-              <td style={td}>{b.type}</td>
               <td style={td}>{b.status}</td>
+              <td style={td}>{b.categories?.join(", ") || "—"}</td>
 
               <td style={td}>
                 <button
+                  onClick={() => handleSelect(b)}
                   style={{
                     padding: "8px 15px",
                     background: "#6a0dad",
@@ -162,7 +171,6 @@ export default function EditBook() {
                     borderRadius: "8px",
                     cursor: "pointer"
                   }}
-                  onClick={() => handleSelect(b)}
                 >
                   Editează
                 </button>
@@ -172,13 +180,13 @@ export default function EditBook() {
         </tbody>
       </table>
 
-      {/* --- FORMULAR DE EDITARE --- */}
+      {/* FORMULAR EDITARE */}
       {selectedBook && (
         <form
           onSubmit={handleUpdate}
           style={{
             background: "#f0dfff",
-            padding: "50px",
+            padding: "30px",
             borderRadius: "15px",
             maxWidth: "600px",
             margin: "0 auto"
@@ -191,40 +199,59 @@ export default function EditBook() {
           <p><b>Autor:</b> {selectedBook.author}</p>
           <p><b>An:</b> {selectedBook.year}</p>
 
-          <input
-            type="text"
-            value={newType}
-            placeholder="Tip / gen roman"
-            onChange={(e) => setNewType(e.target.value)}
-            style={input}
-          />
+          {/* CATEGORII MULTIPLE */}
+          <div
+            style={{
+              background: "white",
+              padding: "15px",
+              borderRadius: "10px",
+              border: "1px solid #b298cf",
+              maxHeight: "150px",
+              overflowY: "auto",
+              marginTop: "15px"
+            }}
+          >
+            <label style={{ fontWeight: "bold" }}>Categorii:</label>
+
+            {categoryOptions.map(cat => (
+              <label key={cat} style={{ display: "block", marginTop: "6px" }}>
+                <input
+                  type="checkbox"
+                  checked={newCategories.includes(cat)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setNewCategories([...newCategories, cat]);
+                    } else {
+                      setNewCategories(newCategories.filter(c => c !== cat));
+                    }
+                  }}
+                />
+                <span style={{ marginLeft: "8px" }}>{cat}</span>
+              </label>
+            ))}
+          </div>
 
           <textarea
             value={newDescription}
             placeholder="Descriere"
             onChange={(e) => setNewDescription(e.target.value)}
             rows={4}
-            style={{ ...input, resize: "none" }}
+            style={{ ...inputStyle, resize: "none" }}
           />
 
           <select
             value={newStatus}
             onChange={(e) => setNewStatus(e.target.value)}
-            style={input}
+            style={inputStyle}
           >
             <option value="disponibil">Disponibil</option>
             <option value="imprumutat">Împrumutat</option>
           </select>
 
-          <label style={{ marginTop: "10px", display: "block" }}>
-            Poza nouă (opțional):
+          <label style={{ marginTop: "10px" }}>
+            Poză nouă (opțional):
           </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImage}
-            style={{ marginBottom: "15px" }}
-          />
+          <input type="file" accept="image/*" onChange={handleImage} />
 
           <button
             type="submit"
@@ -236,7 +263,8 @@ export default function EditBook() {
               borderRadius: "10px",
               fontSize: "1.2rem",
               cursor: "pointer",
-              width: "100%"
+              width: "100%",
+              marginTop: "20px"
             }}
           >
             Salvează modificările
@@ -247,20 +275,16 @@ export default function EditBook() {
   );
 }
 
-const th: React.CSSProperties = {
-  padding: "12px",
-  fontSize: "1rem"
-};
-
+const th: React.CSSProperties = { padding: "12px", fontSize: "1rem" };
 const td: React.CSSProperties = {
   padding: "12px",
   borderBottom: "1px solid #ddd"
 };
 
-const input: React.CSSProperties = {
+const inputStyle = {
   padding: "12px",
   width: "100%",
   borderRadius: "8px",
   border: "1px solid #b298cf",
-  marginBottom: "12px"
+  marginTop: "15px"
 };

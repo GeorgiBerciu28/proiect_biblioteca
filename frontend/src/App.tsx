@@ -10,12 +10,22 @@ import EditBook from "./pages/admin/EditBook";
 import DeleteBook from "./pages/admin/DeleteBook";
 import UserList from "./pages/admin/UserList";
 import Borrow from "./pages/Borrow";
+import CategoryPage from "./pages/CategoryPage";
 
 function App() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [showBooksMenu, setShowBooksMenu] = useState(false);
+  const [showSubNav, setShowSubNav] = useState(true);
+  const [showMenuCategories, setShowMenuCategories] = useState(false);
+
+  const subNavLinkStyle: React.CSSProperties = {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: "1.2rem",
+    textDecoration: "none",
+  };
 
   const navigate = useNavigate();
 
@@ -31,6 +41,28 @@ function App() {
 
     window.addEventListener("userChanged", onUserChange);
     return () => window.removeEventListener("userChanged", onUserChange);
+
+  }, []);
+
+  useEffect(() => {
+    let lastScroll = window.scrollY;
+
+    const handleScroll = () => {
+      const current = window.scrollY;
+
+      if (current > lastScroll && current > 120) {
+        // scroll in jos → ascunde
+        setShowSubNav(false);
+      } else {
+        // scroll in sus → arata
+        setShowSubNav(true);
+      }
+
+      lastScroll = current;
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const handleLogout = () => {
@@ -61,6 +93,7 @@ function App() {
         </Link>
       );
     }
+
 
     return (
       <div
@@ -120,7 +153,7 @@ function App() {
           justifyContent: "space-between",
           alignItems: "center",
           padding: "0 32px",
-          backgroundColor: "#5f2669ff",
+          backgroundColor: "#b67ec0ff",
           position: "fixed",
           top: 0,
           left: 0,
@@ -168,7 +201,7 @@ function App() {
                 textAlign: "center",
               }}
             >
-              Panou Administratie
+              Panou Administratie ▼
             </div>
 
             {showAdminMenu && (
@@ -237,7 +270,7 @@ function App() {
                         boxShadow: "0 4px 12px rgba(0,0,0,0.25)"
                       }}
                     >
-                     <Link
+                      <Link
                         to="/admin/books/add"
                         style={{
                           backgroundColor: "#a85acb",
@@ -251,7 +284,7 @@ function App() {
                           boxShadow: "0 3px 8px rgba(0,0,0,0.2)"
                         }}
                       >
-                         Adăugare carte
+                        Adăugare carte
                       </Link>
 
                       <Link
@@ -268,7 +301,7 @@ function App() {
                           boxShadow: "0 3px 8px rgba(0,0,0,0.2)"
                         }}
                       >
-                         Editare carte
+                        Editare carte
                       </Link>
 
                       <Link
@@ -285,7 +318,7 @@ function App() {
                           boxShadow: "0 3px 8px rgba(0,0,0,0.2)"
                         }}
                       >
-                         Ștergere carte
+                        Ștergere carte
                       </Link>
 
                     </div>
@@ -340,6 +373,103 @@ function App() {
         </div>
       </nav>
 
+      {/* NAVBAR SECUNDAR – dispare la scroll */}
+      <div
+        style={{
+          width: "100%",
+          backgroundColor: "#cd96b7ff",
+          left: 0,
+          padding: "10px 0",
+          display: "flex",
+          gap: "40px",
+          position: "fixed",
+          top: "80px",
+          zIndex: 900,
+
+          /* ANIMATIE */
+          transition: "opacity 0.4s ease, transform 0.4s ease",
+          opacity: showSubNav ? 1 : 0,
+          transform: showSubNav ? "translateY(0)" : "translateY(-20px)",
+          pointerEvents: showSubNav ? "auto" : "none",
+        }}
+      >
+
+        {/* CATEGORII + DROPDOWN */}
+        <div style={{ position: "relative" }}>
+          <div
+            onClick={() => setShowMenuCategories(prev => !prev)}
+            style={{
+              ...subNavLinkStyle,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "5px",
+              fontSize: "1.7rem",
+              marginLeft: "50px"
+            }}
+          >
+            Categorii ▼
+          </div>
+
+          {showMenuCategories && (
+            <div
+              style={{
+                position: "absolute",
+                top: "40px",
+                left: "60px",
+                backgroundColor: "#fff",
+                borderRadius: "12px",
+                padding: "12px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                minWidth: "330px",
+                zIndex: 2000
+              }}
+            >
+              {[
+                { key: "clasica_literatura_universala", label: "Clasica Literatura Universala" },
+                { key: "fantasy", label: "Fantasy" },
+                { key: "science_fiction", label: "Science Fiction" },
+                { key: "thriller_mystery_crime", label: "Thriller/Mystery/Crime" },
+                { key: "romantism", label: "Romantism" },
+                { key: "non_fictiune_eseuri_analize_jurnale", label: "Non-Fictiune (Eseuri, Analize, Jurnale)" },
+                { key: "dezvoltare_personala_psihologie", label: "Dezvoltare Personala/Psihologie" },
+                { key: "istorie_biografii_memorii", label: "Istorie/Biografii/Memorii" },
+                { key: "stiinta_tehnologie", label: "Stiinta/Tehnologie" },
+                { key: "poezii", label: "Poezii" },
+              ].map(cat => (
+                <Link
+                  key={cat.key}
+                  to={`/category/${encodeURIComponent(cat.key)}`}
+                  style={{
+                    display: "block",
+                    padding: "10px 14px",
+                    fontSize: "1.3rem",
+                    fontWeight: "bold",
+                    textDecoration: "none",
+                    color: "#6a1b7a",
+                    borderRadius: "6px"
+                  }}
+                >
+                  {cat.label}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+
+        <div style={{ flex: 0.55 }}></div>
+        <Link to="/" style={subNavLinkStyle}>Acasă</Link>
+
+        <Link to="/cele-mai-citite" style={subNavLinkStyle}>
+          Cele mai citite
+        </Link>
+
+        <Link to="/cele-mai-recomandate" style={subNavLinkStyle}>
+          Cele mai recomandate
+        </Link>
+      </div>
+
       <div style={{ paddingTop: "100px" }}>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -347,10 +477,11 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/account" element={<AccountDetails />} />
           <Route path="/admin/books/add" element={<AddBook />} />
-          <Route path="/admin/books/edit" element={<EditBook/>}/>
-          <Route path="/admin/books/delete" element={<DeleteBook/>}/>
-          <Route path="/admin/users" element={<UserList/>} />
-          <Route path="/borrow" element={<Borrow/>} />
+          <Route path="/admin/books/edit" element={<EditBook />} />
+          <Route path="/admin/books/delete" element={<DeleteBook />} />
+          <Route path="/admin/users" element={<UserList />} />
+          <Route path="/borrow" element={<Borrow />} />
+          <Route path="/category/:category" element={<CategoryPage />} />
         </Routes>
       </div>
       <footer
@@ -369,21 +500,21 @@ function App() {
           zIndex: 900,
         }}
       >
-      <button
-        style={{
-        backgroundColor: "#8e5ba6",  // mov mai deschis
-        color: "white",
-        border: "none",
-        padding: "12px 30px",
-        borderRadius: "25px",
-        fontSize: "1.1rem",
-        fontWeight: "bold",
-        marginLeft: "10px",
-        cursor: "default", // nu poate fi apăsat ca să nu facă nimic
-      }}
-      >
-        About Us
-      </button>
+        <button
+          style={{
+            backgroundColor: "#8e5ba6",  // mov mai deschis
+            color: "white",
+            border: "none",
+            padding: "12px 30px",
+            borderRadius: "25px",
+            fontSize: "1.1rem",
+            fontWeight: "bold",
+            marginLeft: "10px",
+            cursor: "default", // nu poate fi apăsat ca să nu facă nimic
+          }}
+        >
+          About Us
+        </button>
       </footer>
 
     </>

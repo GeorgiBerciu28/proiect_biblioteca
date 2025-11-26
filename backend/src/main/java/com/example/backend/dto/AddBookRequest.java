@@ -1,18 +1,21 @@
 package com.example.backend.dto;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class AddBookRequest {
     private String title;
     private String author;
     private int year;
-    private String type;
+    private List<String> categories= new ArrayList<>();
     private String description;
     private String status;
     public AddBookRequest() {}
-    public AddBookRequest(String title, String author, int year,String type, String description, String status) {
+    public AddBookRequest(String title, String author, int year, String description, String status) {
         this.title = title;
         this.author = author;
         this.year = year;
-        this.type = type;
+        this.categories = new ArrayList<>();
         this.description = description;
         this.status = status;
 
@@ -47,11 +50,11 @@ public class AddBookRequest {
     public void setStatus(String status) {
         this.status = status;
     }
-    public String getType() {
-        return type;
+    public List<String> getCategories() {
+        return categories;
     }
-    public void setType(String type) {
-        this.type = type;
+    public void setCategories(List<String> categories) {
+        this.categories = categories;
     }
 
 

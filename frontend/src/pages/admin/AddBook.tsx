@@ -1,18 +1,32 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 
 export default function AddBook() {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [year, setYear] = useState("");
-  const [type, setType] =useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("disponibil");
+  const [categories, setCategories] = useState<string[]>([]);
   const [image, setImage] = useState<File | null>(null);
-
   const [message, setMessage] = useState("");
+
   useEffect(() => {
-      document.title = "Adaugare | Administratie";
+    document.title = "Adaugare | Administratie";
   }, []);
+
+  const categoryOptions = [
+    "clasica_literatura_universala",
+    "fantasy",
+    "science_fiction",
+    "thriller_mystery_crime",
+    "romantism",
+    "non_fictiune_eseuri_analize_jurnale",
+    "dezvoltare_personala_psihologie",
+    "istorie_biografii_memorii",
+    "stiinta_tehnologie",
+    "poezii"
+  ];
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setImage(e.target.files[0]);
@@ -22,22 +36,20 @@ export default function AddBook() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title || !author || !year || !type) {
-      setMessage("Completează toate câmpurile obligatorii.");
+    if (!title || !author || !year) {
+      setMessage("Completează câmpurile obligatorii (titlu, autor, anul).");
       return;
     }
 
-    // 🔥 JSON-ul cu datele cărții
     const bookData = {
       title,
       author,
       year,
-      type,
       description,
-      status
+      status,
+      categories, // 🔥 trimitem lista de categorii
     };
 
-    // 🔥 formData pentru Spring Boot (multipart)
     const formData = new FormData();
     formData.append(
       "data",
@@ -58,22 +70,24 @@ export default function AddBook() {
 
       setMessage("Cartea a fost adăugată cu succes!");
 
+      // resetare formular
       setTitle("");
       setAuthor("");
       setYear("");
-      setType("");
       setDescription("");
+      setStatus("disponibil");
+      setCategories([]);
       setImage(null);
 
-    } catch (error) {
+    } catch (err) {
       setMessage("Eroare la adăugare.");
     }
   };
 
   return (
-    <div style={{ padding: "40px", maxWidth: "800px", margin: "0 auto" }}>
+    <div style={{ padding: "40px", maxWidth: "900px", margin: "0 auto" }}>
       <h1 style={{ textAlign: "center", marginBottom: "25px" }}>
-        Formular pentru adăugarea unei cărți noi
+        Adaugă o carte nouă
       </h1>
 
       {message && (
@@ -91,7 +105,6 @@ export default function AddBook() {
         </div>
       )}
 
-      {/* CARD container */}
       <div
         style={{
           background: "#f6e8ff",
@@ -102,8 +115,7 @@ export default function AddBook() {
           gap: "30px",
         }}
       >
-
-        {/* IMAGE PREVIEW */}
+        {/* PREVIEW IMAGINE */}
         <div style={{ flex: "1" }}>
           <div
             style={{
@@ -144,7 +156,7 @@ export default function AddBook() {
           />
         </div>
 
-        {/* FORM */}
+        {/* FORMULAR */}
         <form
           onSubmit={handleSubmit}
           style={{
@@ -159,13 +171,7 @@ export default function AddBook() {
             placeholder="Titlul cărții *"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            style={{
-              padding: "12px",
-              borderRadius: "10px",
-              border: "1px solid #b298cf",
-              fontSize: "1rem",
-              outline: "none",
-            }}
+            style={inputStyle}
           />
 
           <input
@@ -173,13 +179,7 @@ export default function AddBook() {
             placeholder="Autorul *"
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
-            style={{
-              padding: "12px",
-              borderRadius: "10px",
-              border: "1px solid #b298cf",
-              fontSize: "1rem",
-              outline: "none",
-            }}
+            style={inputStyle}
           />
 
           <input
@@ -187,53 +187,54 @@ export default function AddBook() {
             placeholder="Anul apariției *"
             value={year}
             onChange={(e) => setYear(e.target.value)}
+            style={inputStyle}
+          />
+
+          {/* CATEGORII MULTIPLE */}
+          <div
             style={{
-              padding: "12px",
+              background: "white",
+              padding: "15px",
               borderRadius: "10px",
               border: "1px solid #b298cf",
-              fontSize: "1rem",
-              outline: "none",
+              maxHeight: "170px",
+              overflowY: "auto",
             }}
-          />
-          <input
-            type="text"
-            placeholder="Tipul romanului *"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            style={{
-              padding: "12px",
-              borderRadius: "10px",
-              border: "1px solid #b298cf",
-              fontSize: "1rem",
-              outline: "none",
-            }}
-          />
+          >
+            <label style={{ fontWeight: "bold", fontSize: "1.1rem" }}>
+              Categorii:
+            </label>
+
+            {categoryOptions.map((cat) => (
+              <label key={cat} style={{ display: "block", marginTop: "6px" }}>
+                <input
+                  type="checkbox"
+                  checked={categories.includes(cat)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setCategories([...categories, cat]);
+                    } else {
+                      setCategories(categories.filter((c) => c !== cat));
+                    }
+                  }}
+                />
+                <span style={{ marginLeft: "8px" }}>{cat}</span>
+              </label>
+            ))}
+          </div>
+
           <textarea
             placeholder="Descriere"
             value={description}
-            rows={5}
+            rows={4}
             onChange={(e) => setDescription(e.target.value)}
-            style={{
-              padding: "12px",
-              borderRadius: "10px",
-              border: "1px solid #b298cf",
-              fontSize: "1rem",
-              outline: "none",
-              resize: "none",
-            }}
+            style={{ ...inputStyle, resize: "none" }}
           />
 
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            style={{
-              padding: "12px",
-              borderRadius: "10px",
-              border: "1px solid #b298cf",
-              fontSize: "1rem",
-              outline: "none",
-              background: "white",
-            }}
+            style={inputStyle}
           >
             <option value="disponibil">Disponibil</option>
             <option value="imprumutat">Împrumutat</option>
@@ -260,3 +261,12 @@ export default function AddBook() {
     </div>
   );
 }
+
+const inputStyle = {
+  padding: "12px",
+  borderRadius: "10px",
+  border: "1px solid #b298cf",
+  fontSize: "1rem",
+  outline: "none",
+  width: "100%",
+};
