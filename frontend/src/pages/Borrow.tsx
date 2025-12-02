@@ -51,8 +51,8 @@ export default function Borrow() {
       return;
     }
 
-    try {
-      const response = await fetch("http://localhost:8080/borrow", {
+try {
+      const response = await fetch("http://localhost:8080/books/borrow", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

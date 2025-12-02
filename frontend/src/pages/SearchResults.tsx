@@ -1,5 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 interface Book {
   id: number;
@@ -12,129 +12,103 @@ interface Book {
   image: string | null;
 }
 
-export default function Home() {
-  const [user, setUser] = useState<any>(null);
+export default function SearchResults() {
+  const [searchParams] = useSearchParams();
+  const query = searchParams.get("q") || "";
+  
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
+  const [user, setUser] = useState<any>(null);
 
-  const navigate = useNavigate();
-  
-  const loadBooks = () => {
-    fetch("http://localhost:8080/books")
+  useEffect(() => {
+    document.title = `Rezultate căutare: ${query}`;
+    
+    const userData = localStorage.getItem("user");
+    if (userData) setUser(JSON.parse(userData));
+
+    // Fetch rezultate căutare
+    fetch(`http://localhost:8080/books/search?query=${encodeURIComponent(query)}`)
       .then((res) => res.json())
       .then((data) => {
         setBooks(data);
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Eroare la fetch:", err);
+        console.error("Eroare la căutare:", err);
         setLoading(false);
       });
-  };
+  }, [query]);
 
-  useEffect(() => {
-    document.title = "Main Page | MyLibrary";
-
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-
-    loadBooks();
-  }, []);
-  
   const addToCart = (book: Book) => {
     const cart: Book[] = JSON.parse(localStorage.getItem("cart") || "[]");
     
-    // Verifică dacă cartea există deja în coș
     const exists = cart.some(item => item.id === book.id);
     if (exists) {
-      setMessage("Cartea este deja în coș!");
-      setTimeout(() => setMessage(""), 2000);
+      alert("Cartea este deja în coș!");
       return;
     }
     
     cart.push(book);
     localStorage.setItem("cart", JSON.stringify(cart));
-    
-    // Trigger event pentru actualizare coș
     window.dispatchEvent(new Event("cartChanged"));
-    
-    setMessage("Carte adăugată în coș!");
-    setTimeout(() => setMessage(""), 2000);
+    alert("Carte adăugată în coș!");
   };
 
   if (loading) {
-    return <h2 style={{ textAlign: "center", marginTop: "60px" }}>Se încarcă cărțile...</h2>;
+    return (
+      <div style={{ padding: "40px", textAlign: "center" }}>
+        <h2>Se caută...</h2>
+      </div>
+    );
   }
 
   return (
-    <>
-      {/* BANNER SUPERIOR */}
-      <div
-        style={{
-          width: "100%",
-          marginLeft: "calc(50% - 50vw)",
-          height: "500px",
-          backgroundColor: "#fadbd5",
-          display: "flex",
-          justifyContent: "flex-end",
-          alignItems: "center",
-          paddingRight: "50px",
-          overflow: "hidden",
-          position: "relative"
-        }}
-      >
-        <img
-          src="/imageHome.gif"
-          alt="Banner"
-          style={{
-            width: "500px",
-            height: "auto",
-            objectFit: "contain",
-            display: "block",
-            marginRight: "100px",
-          }}
-        />
+    <div style={{ width: "100%", minHeight: "100vh", padding: "40px" }}>
+      <h1 style={{ 
+        textAlign: "center", 
+        fontSize: "2.5rem", 
+        color: "#5f2669ff",
+        marginBottom: "20px"
+      }}>
+        🔍 Rezultate pentru: "{query}"
+      </h1>
 
-        <img src="/gg.png" style={{ position: "absolute", top: "10px", left: "1700px", width: "210px" }} />
-        <img src="/gjgj.png" style={{ position: "absolute", top: "0px", left: "0px", width: "1200px", zIndex: 0 }} />
-        <img src="/wel.png" style={{ position: "absolute", top: "0px", left: "700px", width: "500px", zIndex: 0 }} />
-        <img src="/e.png" style={{ position: "absolute", top: "150px", left: "830px", width: "230px", zIndex: 0 }} />
-        <img src="/gg.png" style={{ position: "absolute", top: "320px", left: "1170px", width: "180px", zIndex: 0 }} />
-        <img src="/gg.png" style={{ position: "absolute", top: "240px", left: "1220px", width: "100px", zIndex: 0 }} />
-        <img src="/gg.png" style={{ position: "absolute", top: "400px", left: "1320px", width: "100px", zIndex: 0 }} />
-      </div>
+      <p style={{ 
+        textAlign: "center", 
+        fontSize: "1.2rem", 
+        color: "#666",
+        marginBottom: "40px"
+      }}>
+        {books.length === 0 
+          ? "Nu am găsit nicio carte care să corespundă căutării tale." 
+          : `Am găsit ${books.length} ${books.length === 1 ? "carte" : "cărți"}`}
+      </p>
 
-      <div style={{ width: "100%", minHeight: "100vh", padding: "40px" }}>
-        <h2 style={{ 
-          textAlign: "center", 
-          fontSize: "2.5rem", 
-          color: "#5f2669ff",
-          marginBottom: "30px",
-          marginTop: "20px"
+      {books.length === 0 ? (
+        <div style={{
+          textAlign: "center",
+          padding: "60px",
+          backgroundColor: "#f6e8ff",
+          borderRadius: "20px",
+          maxWidth: "600px",
+          margin: "0 auto"
         }}>
-          📖 Colecția noastră de cărți
-        </h2>
-
-        {/* Mesaj */}
-        {message && (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "12px",
-              marginBottom: "20px",
-              backgroundColor: "#d8b4e2",
-              borderRadius: "10px",
-              fontWeight: "bold",
-            }}
-          >
-            {message}
-          </div>
-        )}
-
-        {/* GRID CU CĂRȚI */}
+          <p style={{ fontSize: "1.3rem", marginBottom: "20px" }}>
+            💡 Sugestii pentru căutare:
+          </p>
+          <ul style={{ 
+            listStyle: "none", 
+            padding: 0,
+            fontSize: "1.1rem",
+            lineHeight: "2"
+          }}>
+            <li>✓ Verifică ortografia</li>
+            <li>✓ Încearcă cuvinte mai generale</li>
+            <li>✓ Caută după autor sau titlu</li>
+            <li>✓ Explorează categoriile noastre</li>
+          </ul>
+        </div>
+      ) : (
         <div
           style={{
             display: "grid",
@@ -187,6 +161,7 @@ export default function Home() {
               <h2 style={{ fontSize: "1.2rem", marginBottom: "5px" }}>{book.title}</h2>
               <p style={{ margin: 0, fontWeight: "bold" }}>{book.author}</p>
               <p style={{ margin: 0 }}>An: {book.year}</p>
+              
               <div style={{ margin: 0 }}>
                 {book.categories.map((cat, index) => (
                   <p
@@ -252,7 +227,7 @@ export default function Home() {
             </div>
           ))}
         </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 }

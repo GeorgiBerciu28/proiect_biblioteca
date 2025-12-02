@@ -11,6 +11,11 @@ import DeleteBook from "./pages/admin/DeleteBook";
 import UserList from "./pages/admin/UserList";
 import Borrow from "./pages/Borrow";
 import CategoryPage from "./pages/CategoryPage";
+import BorrowHistory from "./pages/BorrowHistory";
+import LibraryLocation from "./pages/LibraryLocation";
+import ReturnBooks from "./pages/ReturnBooks";
+import SearchResults from "./pages/SearchResults";
+import TermsAndConditions from "./pages/TermsAndConditions";
 
 function App() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -19,6 +24,8 @@ function App() {
   const [showBooksMenu, setShowBooksMenu] = useState(false);
   const [showSubNav, setShowSubNav] = useState(true);
   const [showMenuCategories, setShowMenuCategories] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const subNavLinkStyle: React.CSSProperties = {
     color: "white",
@@ -29,19 +36,41 @@ function App() {
 
   const navigate = useNavigate();
 
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  // Actualizare număr articole în coș
+  const updateCartCount = () => {
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    setCartCount(cart.length);
+  };
 
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     if (savedUser) setCurrentUser(JSON.parse(savedUser));
+
+    // Inițializare număr articole coș
+    updateCartCount();
 
     const onUserChange = () => {
       const updated = localStorage.getItem("user");
       setCurrentUser(updated ? JSON.parse(updated) : null);
     };
 
-    window.addEventListener("userChanged", onUserChange);
-    return () => window.removeEventListener("userChanged", onUserChange);
+    const onCartChange = () => {
+      updateCartCount();
+    };
 
+    window.addEventListener("userChanged", onUserChange);
+    window.addEventListener("cartChanged", onCartChange);
+    
+    return () => {
+      window.removeEventListener("userChanged", onUserChange);
+      window.removeEventListener("cartChanged", onCartChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -51,10 +80,8 @@ function App() {
       const current = window.scrollY;
 
       if (current > lastScroll && current > 120) {
-        // scroll in jos → ascunde
         setShowSubNav(false);
       } else {
-        // scroll in sus → arata
         setShowSubNav(true);
       }
 
@@ -67,7 +94,9 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("cart");
     window.dispatchEvent(new Event("userChanged"));
+    window.dispatchEvent(new Event("cartChanged"));
     navigate("/");
   };
 
@@ -93,7 +122,6 @@ function App() {
         </Link>
       );
     }
-
 
     return (
       <div
@@ -123,6 +151,38 @@ function App() {
           Detalii cont
         </Link>
 
+        <Link
+          to="/borrow-history"
+          style={{
+            padding: "10px",
+            textDecoration: "none",
+            color: "#7a0fc4",
+            fontWeight: "bold",
+            fontSize: "1.2rem",
+            marginBottom: "4px",
+            textAlign: "center"
+          }}
+        >
+          Istoric împrumuturi
+        </Link>
+
+        {currentUser.role === "USER" && (
+          <Link
+            to="/return-books"
+            style={{
+              padding: "10px",
+              textDecoration: "none",
+              color: "#4caf50",
+              fontWeight: "bold",
+              fontSize: "1.2rem",
+              marginBottom: "4px",
+              textAlign: "center"
+            }}
+          >
+            Returnare cărți
+          </Link>
+        )}
+
         <button
           onClick={handleLogout}
           style={{
@@ -145,6 +205,7 @@ function App() {
 
   return (
     <>
+      {/* NAVBAR PRINCIPAL */}
       <nav
         style={{
           width: "100%",
@@ -161,10 +222,14 @@ function App() {
         }}
       >
         <h2 style={{ margin: 0, color: "white", fontSize: "2.3rem" }}>📖 Library</h2>
+        
         {(!currentUser || currentUser.role === "USER") && (
           <input
             type="text"
-            placeholder="Caută o carte..."
+            placeholder="Caută după titlu, autor sau descriere..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={handleSearch}
             style={{
               marginLeft: "6px",
               padding: "10px 15px",
@@ -179,6 +244,7 @@ function App() {
           />
         )}
 
+        {/* PANOU ADMIN */}
         {currentUser?.role === "MANAGER" && (
           <div
             style={{
@@ -201,7 +267,7 @@ function App() {
                 textAlign: "center",
               }}
             >
-              Panou Administratie ▼
+              Panou Administrație ▼
             </div>
 
             {showAdminMenu && (
@@ -320,7 +386,6 @@ function App() {
                       >
                         Ștergere carte
                       </Link>
-
                     </div>
                   )}
                 </div>
@@ -329,51 +394,94 @@ function App() {
           </div>
         )}
 
-        <div
-          style={{
-            position: "relative",
-            marginRight: "80px",
-            paddingBottom: "80px",
-            marginTop: "80px"
-          }}
-          onMouseEnter={() => setShowMenu(true)}
-          onMouseLeave={() => setShowMenu(false)}
-        >
+{/* WRAPPER ICONIȚE */}
+<div style={{ display: "flex", alignItems: "center", gap: "5px", marginRight: "80px" }}>
+  
+  {/* COȘ DE CUMPĂRĂTURI */}
+  {currentUser && currentUser.role === "USER" && (
+    <Link to="/borrow" style={{ position: "relative", textDecoration: "none" }}>
+      <div
+        style={{
+          width: "60px",
+          height: "60px",
+          borderRadius: "50%",
+          backgroundColor: "white",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          cursor: "pointer",
+          position: "relative"
+        }}
+      >
+        <span style={{ fontSize: "2rem" }}>🛒</span>
+        {cartCount > 0 && (
           <div
             style={{
-              width: "60px",
-              height: "60px",
-              borderRadius: "70%",
-              backgroundColor: "white",
+              position: "absolute",
+              top: "-5px",
+              right: "-5px",
+              backgroundColor: "red",
+              color: "white",
+              borderRadius: "50%",
+              width: "25px",
+              height: "25px",
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              cursor: "pointer",
+              fontSize: "0.9rem",
+              fontWeight: "bold"
             }}
           >
-            <img
-              src={currentUser?.role === "MANAGER" ? "/admin.jpg" : "/user.png"}
-              style={{ width: "40px", height: "40px" }}
-            />
+            {cartCount}
           </div>
+        )}
+      </div>
+    </Link>
+  )}
 
-          {showMenu && (
-            <div
-              style={{
-                position: "absolute",
-                top: "85px",
-                left: "50%",
-                transform: "translateX(-55%)",
-                zIndex: 2000,
-              }}
-            >
-              {renderMenu()}
-            </div>
-          )}
-        </div>
+  {/* MENIU UTILIZATOR */}
+  <div
+    style={{ position: "relative" }}
+    onMouseEnter={() => setShowMenu(true)}
+    onMouseLeave={() => setShowMenu(false)}
+  >
+    <div
+      style={{
+        width: "60px",
+        height: "60px",
+        borderRadius: "70%",
+        backgroundColor: "white",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        cursor: "pointer",
+      }}
+    >
+      <img
+        src={currentUser?.role === "MANAGER" ? "/admin.jpg" : "/user.png"}
+        style={{ width: "40px", height: "40px" }}
+      />
+    </div>
+
+    {showMenu && (
+      <div
+        style={{
+          position: "absolute",
+          top: "85px",
+          left: "50%",
+          transform: "translateX(-55%)",
+          zIndex: 2000,
+        }}
+      >
+        {renderMenu()}
+      </div>
+    )}
+  </div>
+</div>
+
       </nav>
 
-      {/* NAVBAR SECUNDAR – dispare la scroll */}
+      {/* NAVBAR SECUNDAR */}
       <div
         style={{
           width: "100%",
@@ -385,16 +493,12 @@ function App() {
           position: "fixed",
           top: "80px",
           zIndex: 900,
-
-          /* ANIMATIE */
           transition: "opacity 0.4s ease, transform 0.4s ease",
           opacity: showSubNav ? 1 : 0,
           transform: showSubNav ? "translateY(0)" : "translateY(-20px)",
           pointerEvents: showSubNav ? "auto" : "none",
         }}
       >
-
-        {/* CATEGORII + DROPDOWN */}
         <div style={{ position: "relative" }}>
           <div
             onClick={() => setShowMenuCategories(prev => !prev)}
@@ -457,9 +561,12 @@ function App() {
           )}
         </div>
 
-
-        <div style={{ flex: 0.55 }}></div>
+        <div style={{ flex: 0.4 }}></div>
         <Link to="/" style={subNavLinkStyle}>Acasă</Link>
+
+        <Link to="/location" style={subNavLinkStyle}>
+          Locația noastră
+        </Link>
 
         <Link to="/cele-mai-citite" style={subNavLinkStyle}>
           Cele mai citite
@@ -470,6 +577,7 @@ function App() {
         </Link>
       </div>
 
+      {/* CONȚINUT PAGINĂ */}
       <div style={{ paddingTop: "100px" }}>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -482,43 +590,145 @@ function App() {
           <Route path="/admin/users" element={<UserList />} />
           <Route path="/borrow" element={<Borrow />} />
           <Route path="/category/:category" element={<CategoryPage />} />
+          <Route path="/borrow-history" element={<BorrowHistory />} />
+          <Route path="/location" element={<LibraryLocation />} />
+          <Route path="/return-books" element={<ReturnBooks />} />
+          <Route path="/search" element={<SearchResults />} />
+          <Route path="/terms" element={<TermsAndConditions />} />
         </Routes>
       </div>
+      
+      {/* FOOTER */}
       <footer
         style={{
           width: "100%",
           backgroundColor: "#5f2669ff",
-          padding: "100px 0",
-          textAlign: "left",
+          padding: "60px 80px",
           color: "white",
-          fontSize: "1.3rem",
-          fontWeight: "bold",
-          alignItems: "flex-start",
-          justifyContent: "flex-start",
           bottom: 0,
           left: 0,
           zIndex: 900,
         }}
       >
-        <button
-          style={{
-            backgroundColor: "#8e5ba6",  // mov mai deschis
-            color: "white",
-            border: "none",
-            padding: "12px 30px",
-            borderRadius: "25px",
-            fontSize: "1.1rem",
+        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+          <h2 style={{ 
+            fontSize: "2.5rem", 
+            marginBottom: "30px",
             fontWeight: "bold",
-            marginLeft: "10px",
-            cursor: "default", // nu poate fi apăsat ca să nu facă nimic
-          }}
-        >
-          About Us
-        </button>
+            textAlign: "center"
+          }}>
+            📚 Despre librăria noastră
+          </h2>
+          
+          <div style={{ display: "flex", gap: "50px", marginBottom: "40px" }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ 
+                fontSize: "1.2rem", 
+                lineHeight: "1.8", 
+                textAlign: "justify",
+                marginBottom: "20px"
+              }}>
+                Bine ai venit la biblioteca noastră digitală! Suntem pasionați de cărți și de puterea lor 
+                de a transforma vieți. Cu o colecție vastă care cuprinde toate genurile - de la clasici 
+                ai literaturii universale până la cele mai recente bestseller-uri - ne dedicăm să aducem 
+                bucuria lecturii în casele voastre.
+              </p>
+              <p style={{ 
+                fontSize: "1.2rem", 
+                lineHeight: "1.8", 
+                textAlign: "justify"
+              }}>
+                Platforma noastră vă oferă acces rapid și simplu la mii de titluri, sistem de împrumut 
+                intuitiv și recomandări personalizate. Fie că sunteți în căutarea unei aventuri fantastice, 
+                a unei lecturi educative sau a unei povești de dragoste, veți găsi aici cartea potrivită 
+                pentru fiecare moment.
+              </p>
+            </div>
+            
+            <div style={{ flex: 1 }}>
+              <div
+                style={{
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  padding: "30px",
+                  borderRadius: "20px",
+                  marginBottom: "20px"
+                }}
+              >
+                <h3 style={{ marginBottom: "15px", fontSize: "1.5rem" }}>
+                  🎯 Misiunea noastră
+                </h3>
+                <p style={{ fontSize: "1.1rem", lineHeight: "1.6" }}>
+                  Să facem lectura accesibilă tuturor și să promovăm cultura literară în comunitate prin tehnologie modernă și servicii de calitate.
+                </p>
+              </div>
+              
+              <div
+                style={{
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  padding: "30px",
+                  borderRadius: "20px"
+                }}
+              >
+                <h3 style={{ marginBottom: "15px", fontSize: "1.5rem" }}>
+                  ⭐ De ce să ne alegi?
+                </h3>
+                <ul style={{ fontSize: "1.1rem", lineHeight: "1.8", paddingLeft: "20px" }}>
+                  <li>Colecție diversificată și actualizată constant</li>
+                  <li>Sistem de împrumut simplu și rapid</li>
+                  <li>Fără taxe de întârziere</li>
+                  <li>Recomandări personalizate</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ 
+            display: "flex", 
+            justifyContent: "center", 
+            gap: "60px",
+            paddingTop: "30px",
+            borderTop: "1px solid rgba(255,255,255,0.2)"
+          }}>
+            <div style={{ textAlign: "center" }}>
+              <h3 style={{ fontSize: "2.5rem", margin: "0", color: "#d8b4e2" }}>500+</h3>
+              <p style={{ margin: "5px 0", fontSize: "1.1rem" }}>Cărți disponibile</p>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <h3 style={{ fontSize: "2.5rem", margin: "0", color: "#d8b4e2" }}>1000+</h3>
+              <p style={{ margin: "5px 0", fontSize: "1.1rem" }}>Utilizatori activi</p>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <h3 style={{ fontSize: "2.5rem", margin: "0", color: "#d8b4e2" }}>24/7</h3>
+              <p style={{ margin: "5px 0", fontSize: "1.1rem" }}>Acces disponibil</p>
+            </div>
+          </div>
+
+          <div style={{ 
+            textAlign: "center", 
+            marginTop: "40px",
+            paddingTop: "20px",
+            borderTop: "1px solid rgba(255,255,255,0.2)",
+            fontSize: "0.9rem",
+            color: "rgba(255,255,255,0.7)"
+          }}>
+            <div style={{ marginBottom: "15px" }}>
+              <Link 
+                to="/terms" 
+                style={{ 
+                  color: "white", 
+                  textDecoration: "underline",
+                  fontSize: "1rem",
+                  fontWeight: "bold"
+                }}
+              >
+                📋 Termeni și Condiții
+              </Link>
+            </div>
+            © 2024 Library Management System. All rights reserved.
+          </div>
+        </div>
       </footer>
-
     </>
-
   );
 }
 
