@@ -5,6 +5,7 @@ export default function AddBook() {
   const [author, setAuthor] = useState("");
   const [year, setYear] = useState("");
   const [description, setDescription] = useState("");
+  const [stock, setStock] = useState(0);
   const [status, setStatus] = useState("disponibil");
   const [categories, setCategories] = useState<string[]>([]);
   const [image, setImage] = useState<File | null>(null);
@@ -46,6 +47,7 @@ export default function AddBook() {
       author,
       year,
       description,
+      stock,
       status,
       categories, // 🔥 trimitem lista de categorii
     };
@@ -75,6 +77,7 @@ export default function AddBook() {
       setAuthor("");
       setYear("");
       setDescription("");
+      setStock(0);
       setStatus("disponibil");
       setCategories([]);
       setImage(null);
@@ -187,6 +190,13 @@ export default function AddBook() {
             placeholder="Anul apariției *"
             value={year}
             onChange={(e) => setYear(e.target.value)}
+            style={inputStyle}
+          />
+          <input
+            type="number"
+            placeholder="Număr exemplare în stoc *"
+            value={stock}
+            onChange={(e) => setStock(Number(e.target.value))}
             style={inputStyle}
           />
 

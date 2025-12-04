@@ -3,11 +3,14 @@ package com.example.backend.controller;
 import com.example.backend.dto.AddBookRequest;
 import com.example.backend.model.Book;
 import com.example.backend.repository.BookRepository;
+import com.example.backend.repository.BorrowRepository;
+import com.example.backend.repository.FavoriteRepository;
 import com.example.backend.service.BorrowService;
 import com.example.backend.service.BookService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,6 +32,11 @@ public class BookController {
 
     @Autowired
     private BorrowService borrowService;
+    @Autowired
+    private FavoriteRepository favoriteRepository;
+
+    @Autowired
+    private BorrowRepository borrowRepository;
 
     private static final String UPLOAD_DIR = "uploads/";
 
@@ -57,6 +65,7 @@ public class BookController {
             book.setStatus(data.getStatus());
             book.setImage(fileName);
             book.setCategories(data.getCategories());
+            book.setStock(data.getStock());
 
             bookRepository.save(book);
             return ResponseEntity.ok("Cartea a fost adaugată!");
@@ -96,27 +105,42 @@ public class BookController {
             return ResponseEntity.status(500).body("Eroare la căutare: " + e.getMessage());
         }
     }
-    // -------------------- DELETE --------------------
+
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<?> deleteBook(@PathVariable Long id) {
         try {
             Book book = bookRepository.findById(id).orElse(null);
 
-            if (book == null)
+            if (book == null) {
                 return ResponseEntity.status(404).body("Cartea nu există.");
+            }
 
-            if (!book.getStatus().equals("disponibil"))
-                return ResponseEntity.status(400).body("Nu poți șterge o carte împrumutată!");
+            // Verificăm dacă există împrumuturi active pentru această carte
+            long activeBorrows = borrowRepository.countByBookIdAndStatus(id, "active");
+            if (activeBorrows > 0) {
+                return ResponseEntity.status(400)
+                        .body("Nu poți șterge o carte care este încă împrumutată!");
+            }
 
+            // Ștergem toate favoritele acestei cărți
+            favoriteRepository.deleteByBookId(id);
+
+            // Apoi ștergem cartea
             bookRepository.deleteById(id);
+
             return ResponseEntity.ok("Cartea a fost ștearsă.");
 
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Eroare la ștergere.");
+            e.printStackTrace();
+            return ResponseEntity.status(500)
+                    .body("Eroare la ștergere: " + e.getMessage());
         }
     }
 
-    // -------------------- UPDATE --------------------
+
+
+
     @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
     public ResponseEntity<?> updateBook(
             @PathVariable Long id,
@@ -129,10 +153,14 @@ public class BookController {
             if (book == null)
                 return ResponseEntity.status(404).body("Cartea nu există.");
 
+            if (!book.getStatus().equals("disponibil")) {
+                return ResponseEntity.status(400).body("Nu poți modifica o carte împrumutată!");
+            }
+
             book.setCategories(data.getCategories());
             book.setDescription(data.getDescription());
             book.setStatus(data.getStatus());
-
+            book.setStock(data.getStock());
             if (image != null && !image.isEmpty()) {
                 String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
                 Path imagePath = Paths.get("uploads/" + fileName);
@@ -169,4 +197,19 @@ public class BookController {
                     .body("Eroare la împrumut: " + e.getMessage());
         }
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getBookById(@PathVariable Long id) {
+        try {
+            Book book = bookRepository.findById(id).orElse(null);
+
+            if (book == null) {
+                return ResponseEntity.status(404).body("Cartea nu există.");
+            }
+
+            return ResponseEntity.ok(book);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Eroare la încărcarea cărții.");
+        }
+    }
+
 }

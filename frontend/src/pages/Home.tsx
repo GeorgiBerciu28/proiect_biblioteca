@@ -17,6 +17,7 @@ export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [favorites, setFavorites] = useState<number[]>([]);
 
   const navigate = useNavigate();
   
@@ -39,11 +40,21 @@ export default function Home() {
     const userData = localStorage.getItem("user");
     if (userData) {
       setUser(JSON.parse(userData));
+      
     }
 
     loadBooks();
   }, []);
-  
+  useEffect(() => {
+      if (!user) return;
+
+      fetch(`http://localhost:8080/favorites/${user.id}`)
+        .then(res => res.json())
+        .then(favs => {
+          setFavorites(favs.map((f: any) => f.bookId));
+        })
+        .catch(err => console.error(err));
+  }, [user]);
   const addToCart = (book: Book) => {
     const cart: Book[] = JSON.parse(localStorage.getItem("cart") || "[]");
     
@@ -143,114 +154,199 @@ export default function Home() {
             padding: "20px",
           }}
         >
-          {books.map((book) => (
-            <div
-              key={book.id}
-              style={{
-                background: "#f6e8ff",
-                padding: "15px",
-                borderRadius: "15px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-              }}
-            >
+           {books.map((book) => {
+            const handleFavorite = async () => {
+              if (!user) {
+                  alert("Trebuie să fii logat pentru a folosi favorite!");
+                  return;
+                }
+
+                const isFav = favorites.includes(book.id);
+
+                const url = isFav
+                  ? "http://localhost:8080/favorites/remove"
+                  : "http://localhost:8080/favorites/add";
+
+                const res = await fetch(url, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    userId: user.id,
+                    bookId: book.id,
+                  }),
+                });
+
+                if (!res.ok) {
+                  alert(await res.text());
+                  return;
+                }
+
+                // Actualizare instantă UI
+                if (isFav) {
+                  setFavorites(favorites.filter(id => id !== book.id));
+                } else {
+                  setFavorites([...favorites, book.id]);
+                }
+             };
+
+            return (
               <div
+                key={book.id}
                 style={{
-                  width: "100%",
-                  height: "360px",
-                  background: "#d8c2f0",
-                  borderRadius: "10px",
-                  overflow: "hidden",
-                  marginBottom: "10px",
+                  background: "#f6e8ff",
+                  padding: "15px",
+                  borderRadius: "15px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                 }}
               >
-                {book.image ? (
-                  <img
-                    src={`http://localhost:8080/uploads/${book.image}`}
-                    alt="coperta"
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                ) : (
+                <div
+                  style={{
+                    width: "100%",
+                    height: "360px",
+                    background: "#d8c2f0",
+                    borderRadius: "10px",
+                    overflow: "hidden",
+                    marginBottom: "10px",
+                  }}
+                >
+                  {book.image ? (
+                    <Link to={`/book/${book.id}`}>
+                      <img
+                        src={`http://localhost:8080/uploads/${book.image}`}
+                        alt="coperta"
+                        style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "pointer" }}
+                      />
+                   </Link>
+                  ) : (
+                    <div
+                      style={{
+                        height: "100%",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        color: "#7a4fa1",
+                      }}
+                    >
+                      Fără imagine
+                    </div>
+                  )}
+                </div>
+
+                {/* //<h2 style={{ fontSize: "1.2rem", marginBottom: "5px" }}>{book.title}</h2> */}
+                <Link 
+                  to={`/book/${book.id}`} 
+                  style={{ textDecoration: "none", color: "#4a0a78", fontWeight: "bold" }}
+                >
+                  <h2 style={{ fontSize: "1.2rem", marginBottom: "5px" }}>
+                    {book.title}
+                  </h2>
+              </Link>
+                <p style={{ margin: 0, fontWeight: "bold" }}>{book.author}</p>
+                <p style={{ margin: 0 }}>An: {book.year}</p>
+
+                <div style={{ margin: 0 }}>
+                  {book.categories.map((cat, index) => (
+                    <p
+                      key={index}
+                      style={{
+                        margin: "2px 0",
+                        fontWeight: "bold",
+                        color: "#5a1e5f",
+                      }}
+                    >
+                      {cat.replaceAll("_", " ")}
+                    </p>
+                  ))}
+                </div>
+
+                <p
+                  style={{
+                    marginTop: "10px",
+                    color: book.status === "disponibil" ? "green" : "red",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {book.status}
+                </p>
+
+                {user && (
                   <div
                     style={{
-                      height: "100%",
                       display: "flex",
-                      justifyContent: "center",
+                      justifyContent: "space-between",
                       alignItems: "center",
-                      color: "#7a4fa1",
+                      marginTop: "10px",
+                      width: "100%",
                     }}
                   >
-                    Fără imagine
+                    {book.status === "disponibil" ? (
+                      <button
+                        onClick={() => addToCart(book)}
+                        style={{
+                          padding: "10px",
+                          backgroundColor: "#7a0fc4",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "10px",
+                          fontWeight: "bold",
+                          cursor: "pointer",
+                          flexGrow: 1,
+                          marginRight: "10px",
+                        }}
+                      >
+                        Adaugă în coș
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        style={{
+                          padding: "10px",
+                          backgroundColor: "gray",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "10px",
+                          fontWeight: "bold",
+                          cursor: "not-allowed",
+                          flexGrow: 1,
+                          marginRight: "10px",
+                        }}
+                      >
+                        Indisponibilă
+                      </button>
+                    )}
+
+                    <button
+                      onClick={handleFavorite}
+                      style={{
+                        width: "45px",
+                        height: "45px",
+                        borderRadius: "10px",
+                        background: "white",
+                        border: "2px solid #7a0fc4",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                    >
+                      <svg
+                        width="28"
+                        height="28"
+                        viewBox="0 0 24 24"
+                        fill={favorites.includes(book.id) ? "red" : "none"}
+                        stroke={favorites.includes(book.id) ? "red" : "#7a0fc4"}
+                        strokeWidth="2"
+                      >
+                        <path d="M12 21s-7-4.35-10-9.5S4.5 3 7.5 5.5 12 10 12 10s2.5-4.5 5.5-4.5S22 7.5 22 11.5 12 21 12 21z" />
+                      </svg>
+                    </button>
                   </div>
                 )}
               </div>
+            );
+          })}
 
-              <h2 style={{ fontSize: "1.2rem", marginBottom: "5px" }}>{book.title}</h2>
-              <p style={{ margin: 0, fontWeight: "bold" }}>{book.author}</p>
-              <p style={{ margin: 0 }}>An: {book.year}</p>
-              <div style={{ margin: 0 }}>
-                {book.categories.map((cat, index) => (
-                  <p
-                    key={index}
-                    style={{
-                      margin: "2px 0",
-                      fontWeight: "bold",
-                      color: "#5a1e5f"
-                    }}
-                  >
-                    {cat.replaceAll("_", " ")}
-                  </p>
-                ))}
-              </div>
-
-              <p
-                style={{
-                  marginTop: "10px",
-                  color: book.status === "disponibil" ? "green" : "red",
-                  fontWeight: "bold",
-                }}
-              >
-                {book.status}
-              </p>
-
-              {user && book.status === "disponibil" && (
-                <button
-                  onClick={() => addToCart(book)}
-                  style={{
-                    marginTop: "10px",
-                    width: "100%",
-                    padding: "10px",
-                    backgroundColor: "#7a0fc4",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "10px",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                  }}
-                >
-                  Adaugă în coș
-                </button>
-              )}
-
-              {user && book.status !== "disponibil" && (
-                <button
-                  disabled
-                  style={{
-                    marginTop: "10px",
-                    width: "100%",
-                    padding: "10px",
-                    backgroundColor: "gray",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "10px",
-                    fontWeight: "bold",
-                    cursor: "not-allowed",
-                  }}
-                >
-                  Indisponibilă
-                </button>
-              )}
-            </div>
-          ))}
         </div>
       </div>
     </>

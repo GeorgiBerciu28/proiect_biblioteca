@@ -29,17 +29,21 @@ public class Book {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "stock")
+    private int stock;
+
     private String status;
 
     private String image;
 
     public Book() {}
 
-    public Book(String title, String author, int year, String description, String status, String image) {
+    public Book(String title, String author, int year, String description,int stock, String status, String image) {
         this.title = title;
         this.author = author;
         this.year = year;
         this.description = description;
+        this.stock = stock;
         this.status = status;
         this.image = image;
         this.categories = new ArrayList<>();
@@ -70,6 +74,9 @@ public class Book {
     public void setYear(int year) { this.year = year; }
 
     public void setDescription(String description) { this.description = description; }
+
+    public void setStock(int stock) { this.stock = stock; }
+    public int getStock() { return stock; }
 
     public void setStatus(String status) { this.status = status; }
 

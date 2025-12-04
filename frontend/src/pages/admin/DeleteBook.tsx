@@ -9,6 +9,7 @@ interface Book {
   status: string;
   image: string | null;
   description : String;
+  stock : number;
 }
 
 export default function DeleteBook() {

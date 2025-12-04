@@ -6,6 +6,7 @@ interface Book {
   author: string;
   year: number;
   description: string;
+  stock: number;
   status: string;
   image: string | null;
   categories: string[];
@@ -19,7 +20,7 @@ export default function EditBook() {
   const [newStatus, setNewStatus] = useState("disponibil");
   const [newCategories, setNewCategories] = useState<string[]>([]);
   const [newImage, setNewImage] = useState<File | null>(null);
-
+  const [newStock, setNewStock] = useState(0);
   const [message, setMessage] = useState("");
 
   const categoryOptions = [
@@ -52,6 +53,7 @@ export default function EditBook() {
     setNewDescription(book.description);
     setNewStatus(book.status);
     setNewCategories(book.categories || []);
+    setNewStock(book.stock);
     setNewImage(null);
   };
 
@@ -68,7 +70,8 @@ export default function EditBook() {
     const updateData = {
       description: newDescription,
       status: newStatus,
-      categories: newCategories
+      categories: newCategories,
+      stock: newStock
     };
 
     const formData = new FormData();
@@ -86,8 +89,12 @@ export default function EditBook() {
         method: "PUT",
         body: formData
       });
-
-      if (!res.ok) throw new Error();
+      const text = await res.text();
+      if (!res.ok) {
+        setMessage(text); 
+        return;
+      }  
+       // throw new Error();
 
       setMessage("Cartea a fost actualizată!");
       setSelectedBook(null);
@@ -135,6 +142,7 @@ export default function EditBook() {
             <th style={th}>An</th>
             <th style={th}>Status</th>
             <th style={th}>Categorie</th>
+            <th style={th}>Stoc</th> 
             <th style={th}>Acțiune</th>
           </tr>
         </thead>
@@ -159,7 +167,7 @@ export default function EditBook() {
               <td style={td}>{b.year}</td>
               <td style={td}>{b.status}</td>
               <td style={td}>{b.categories?.join(", ") || "—"}</td>
-
+              <td style={td}>{b.stock}</td>
               <td style={td}>
                 <button
                   onClick={() => handleSelect(b)}
@@ -247,6 +255,15 @@ export default function EditBook() {
             <option value="disponibil">Disponibil</option>
             <option value="imprumutat">Împrumutat</option>
           </select>
+
+          <input
+            type="number"
+            value={newStock}
+            onChange={(e) => setNewStock(Number(e.target.value))}
+            placeholder="Stoc"
+            style={inputStyle}
+          />
+
 
           <label style={{ marginTop: "10px" }}>
             Poză nouă (opțional):

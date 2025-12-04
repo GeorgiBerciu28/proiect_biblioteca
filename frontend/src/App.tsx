@@ -16,6 +16,9 @@ import LibraryLocation from "./pages/LibraryLocation";
 import ReturnBooks from "./pages/ReturnBooks";
 import SearchResults from "./pages/SearchResults";
 import TermsAndConditions from "./pages/TermsAndConditions";
+import Favorite from "./pages/Favorite";
+import MostRead from "./pages/MostRead";
+import BookDetail from "./pages/BookDetail";
 
 function App() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -26,7 +29,7 @@ function App() {
   const [showMenuCategories, setShowMenuCategories] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
-
+  
   const subNavLinkStyle: React.CSSProperties = {
     color: "white",
     fontWeight: "bold",
@@ -441,7 +444,10 @@ function App() {
 
   {/* MENIU UTILIZATOR */}
   <div
-    style={{ position: "relative" }}
+    style={{ position: "relative" ,
+            marginRight: "80px",
+            paddingBottom: "80px",
+            marginTop: "80px"  }}
     onMouseEnter={() => setShowMenu(true)}
     onMouseLeave={() => setShowMenu(false)}
   >
@@ -568,13 +574,15 @@ function App() {
           Locația noastră
         </Link>
 
-        <Link to="/cele-mai-citite" style={subNavLinkStyle}>
-          Cele mai citite
+        <Link to="/favorites" style={subNavLinkStyle}>
+          Favorite ❤️
         </Link>
 
-        <Link to="/cele-mai-recomandate" style={subNavLinkStyle}>
-          Cele mai recomandate
-        </Link>
+        <Link to="/cele-mai-citite" style={subNavLinkStyle}>
+          Cele mai citite
+        </Link>  
+
+
       </div>
 
       {/* CONȚINUT PAGINĂ */}
@@ -595,6 +603,9 @@ function App() {
           <Route path="/return-books" element={<ReturnBooks />} />
           <Route path="/search" element={<SearchResults />} />
           <Route path="/terms" element={<TermsAndConditions />} />
+          <Route path="/favorites" element={<Favorite />} />
+          <Route path="/cele-mai-citite" element={<MostRead />}/>
+          <Route path="/book/:id" element={<BookDetail/>}/>
         </Routes>
       </div>
       

@@ -9,14 +9,16 @@ public class AddBookRequest {
     private int year;
     private List<String> categories= new ArrayList<>();
     private String description;
+    private int stock;
     private String status;
     public AddBookRequest() {}
-    public AddBookRequest(String title, String author, int year, String description, String status) {
+    public AddBookRequest(String title, String author, int year, String description,int stock, String status) {
         this.title = title;
         this.author = author;
         this.year = year;
         this.categories = new ArrayList<>();
         this.description = description;
+        this.stock = stock;
         this.status = status;
 
     }
@@ -55,6 +57,12 @@ public class AddBookRequest {
     }
     public void setCategories(List<String> categories) {
         this.categories = categories;
+    }
+    public void setStock(int stock) {
+        this.stock = stock;
+    }
+    public int getStock() {
+        return stock;
     }
 
 

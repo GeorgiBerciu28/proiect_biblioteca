@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { Link,useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 interface Book {
@@ -19,6 +19,7 @@ export default function CategoryPage() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [favorites, setFavorites] = useState<number[]>([]);
 
   const categoryImages: Record<string, { src: string; top: string; left: string; width: string }[]> = {
 
@@ -125,12 +126,56 @@ export default function CategoryPage() {
     const userData = localStorage.getItem("user");
     if (userData) setUser(JSON.parse(userData));
   }, []);
+  useEffect(() => {
+    if (!user) return;
+
+    fetch(`http://localhost:8080/favorites/${user.id}`)
+      .then(res => res.json())
+      .then(favs => {
+        setFavorites(favs.map((f: any) => f.bookId));
+      })
+      .catch(err => console.error(err));
+
+  }, [user]);
 
   const addToCart = (book: Book) => {
     const cart: Book[] = JSON.parse(localStorage.getItem("cart") || "[]");
     cart.push(book);
     localStorage.setItem("cart", JSON.stringify(cart));
     window.location.href = "/borrow";
+  };
+  const handleFavorite = async (bookId: number) => {
+      if (!user) {
+        alert("Trebuie să fii logat pentru a folosi favorite!");
+        return;
+      }
+
+      const isFav = favorites.includes(bookId);
+
+      const url = isFav
+        ? "http://localhost:8080/favorites/remove"
+        : "http://localhost:8080/favorites/add";
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          bookId: bookId,
+        }),
+      });
+
+      if (!res.ok) {
+        alert(await res.text());
+        return;
+      }
+
+      // actualizare instantă UI
+      if (isFav) {
+        setFavorites(favorites.filter(id => id !== bookId));
+      } else {
+        setFavorites([...favorites, bookId]);
+      }
   };
 
   useEffect(() => {
@@ -219,10 +264,13 @@ export default function CategoryPage() {
               }}
             >
               {book.image ? (
-                <img
-                  src={`http://localhost:8080/uploads/${book.image}`}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
+                    <Link to={`/book/${book.id}`}>
+                      <img
+                        src={`http://localhost:8080/uploads/${book.image}`}
+                        alt="coperta"
+                        style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "pointer" }}
+                      />
+                   </Link>
               ) : (
                 <div style={{ height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
                   Fără imagine
@@ -230,7 +278,15 @@ export default function CategoryPage() {
               )}
             </div>
 
-            <h2 style={{ fontSize: "1.2rem", marginBottom: 5 }}>{book.title}</h2>
+            {/* <h2 style={{ fontSize: "1.2rem", marginBottom: 5 }}>{book.title}</h2> */}
+            <Link 
+                  to={`/book/${book.id}`} 
+                  style={{ textDecoration: "none", color: "#4a0a78", fontWeight: "bold" }}
+                >
+                  <h2 style={{ fontSize: "1.2rem", marginBottom: "5px" }}>
+                    {book.title}
+                  </h2>
+            </Link>
             <p style={{ fontWeight: "bold" }}>{book.author}</p>
             <p>An: {book.year}</p>
 
@@ -244,22 +300,79 @@ export default function CategoryPage() {
               {book.status}
             </p>
 
-            {user && book.status === "disponibil" && (
-              <button onClick={() => addToCart(book)} style={{
-                width: "100%", padding: "10px", background: "#7a0fc4", color: "white",
-                border: "none", borderRadius: "10px", fontWeight: "bold"
-              }}>
-                Împrumută
-              </button>
-            )}
+            {user && (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginTop: "10px",
+                      width: "100%",
+                    }}
+                  >
+                    {book.status === "disponibil" ? (
+                      <button
+                        onClick={() => addToCart(book)}
+                        style={{
+                          padding: "10px",
+                          backgroundColor: "#7a0fc4",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "10px",
+                          fontWeight: "bold",
+                          cursor: "pointer",
+                          flexGrow: 1,
+                          marginRight: "10px",
+                        }}
+                      >
+                        Adaugă în coș
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        style={{
+                          padding: "10px",
+                          backgroundColor: "gray",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "10px",
+                          fontWeight: "bold",
+                          cursor: "not-allowed",
+                          flexGrow: 1,
+                          marginRight: "10px",
+                        }}
+                      >
+                        Indisponibilă
+                      </button>
+                    )}
 
-            {user && book.status !== "disponibil" && (
-              <button disabled style={{
-                width: "100%", padding: "10px", background: "gray", color: "white",
-                border: "none", borderRadius: "10px", fontWeight: "bold"
-              }}>
-                Indisponibilă
-              </button>
+                    <button
+                      onClick={() => handleFavorite(book.id)}
+                      style={{
+                        width: "45px",
+                        height: "45px",
+                        borderRadius: "10px",
+                        background: "white",
+                        border: "2px solid #7a0fc4",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                    >
+                      <svg
+                        width="28"
+                        height="28"
+                        viewBox="0 0 24 24"
+                        fill={favorites.includes(book.id) ? "red" : "none"}
+                        stroke={favorites.includes(book.id) ? "red" : "#7a0fc4"}
+                        strokeWidth="2"
+                      >
+                        <path d="M12 21s-7-4.35-10-9.5S4.5 3 7.5 5.5 12 10 12 10s2.5-4.5 5.5-4.5S22 7.5 22 11.5 12 21 12 21z" />
+                      </svg>
+                    </button>
+               </div>      
             )}
           </div>
         ))}

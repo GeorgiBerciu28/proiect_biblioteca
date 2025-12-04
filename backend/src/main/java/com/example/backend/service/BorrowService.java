@@ -26,10 +26,11 @@ public class BorrowService {
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new RuntimeException("Cartea nu a fost găsită"));
 
-        if (!"disponibil".equals(book.getStatus())) {
-            throw new RuntimeException("Cartea nu este disponibilă");
+        if (book.getStock() <= 0) {
+            throw new RuntimeException("Nu mai sunt exemplare disponibile!");
         }
 
+        // Creăm împrumutul
         Borrow borrow = new Borrow(
                 userId,
                 bookId,
@@ -38,7 +39,16 @@ public class BorrowService {
                 book.getImage()
         );
 
-        book.setStatus("imprumutat");
+        // Scădem un exemplar
+        book.setStock(book.getStock() - 1);
+
+        // Actualizăm status
+        if (book.getStock() == 0) {
+            book.setStatus("indisponibil");
+        } else {
+            book.setStatus("disponibil");
+        }
+
         bookRepository.save(book);
 
         return borrowRepository.save(borrow);
@@ -78,7 +88,13 @@ public class BorrowService {
 
         Book book = bookRepository.findById(borrow.getBookId())
                 .orElseThrow(() -> new RuntimeException("Cartea nu a fost găsită"));
-        book.setStatus("disponibil");
+
+        book.setStock(book.getStock() + 1);
+
+        if (book.getStock() > 0) {
+            book.setStatus("disponibil");
+        }
+
         bookRepository.save(book);
     }
 
@@ -88,4 +104,8 @@ public class BorrowService {
             createBorrow(userId, bookId);
         }
     }
+    public List<Object[]> getMostReadBooks(long minReads) {
+        return borrowRepository.findMostReadBooks(minReads);
+    }
+
 }
