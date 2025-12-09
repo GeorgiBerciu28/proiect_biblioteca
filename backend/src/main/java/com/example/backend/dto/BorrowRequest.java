@@ -13,4 +13,7 @@ public class BorrowRequest {
     public List<Long> getBookIds() {
         return bookIds;
     }
+
+    public void setUserId(Long userId) { this.userId = userId; }
+    public void setBookIds(List<Long> bookIds) { this.bookIds = bookIds; }
 }

@@ -1,5 +1,6 @@
 package com.example.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,10 +36,10 @@ public class Book {
     private String status;
 
     private String image;
-
+    private String pdf;
     public Book() {}
 
-    public Book(String title, String author, int year, String description,int stock, String status, String image) {
+    public Book(String title, String author, int year, String description,int stock, String status, String image, String pdf) {
         this.title = title;
         this.author = author;
         this.year = year;
@@ -46,6 +47,7 @@ public class Book {
         this.stock = stock;
         this.status = status;
         this.image = image;
+        this.pdf = pdf;
         this.categories = new ArrayList<>();
     }
 
@@ -83,4 +85,9 @@ public class Book {
     public void setImage(String image) { this.image = image; }
 
     public void setCategories(List<String> categories) { this.categories = categories; }
+
+    public String getPdf() { return pdf; }
+    public void setPdf(String pdf) { this.pdf = pdf; }
+
+
 }

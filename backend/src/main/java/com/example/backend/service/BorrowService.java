@@ -39,6 +39,8 @@ public class BorrowService {
                 book.getImage()
         );
 
+        borrow.setStatus("active");
+        borrow.setBorrowDate(LocalDateTime.now());
         // Scădem un exemplar
         book.setStock(book.getStock() - 1);
 
@@ -66,7 +68,8 @@ public class BorrowService {
     }
 
     public List<Borrow> getBorrowHistoryByUserId(Long userId) {
-        return borrowRepository.findByUserIdOrderByBorrowDateDesc(userId);
+        return borrowRepository.findByUserIdOrderByIdDesc(userId);
+
     }
 
     public List<Borrow> getActiveBorrows() {
@@ -106,6 +109,75 @@ public class BorrowService {
     }
     public List<Object[]> getMostReadBooks(long minReads) {
         return borrowRepository.findMostReadBooks(minReads);
+    }
+
+
+    @Transactional
+    public Borrow createReservation(Long userId, Long bookId) {
+
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Cartea nu a fost găsită"));
+
+        if (book.getStock() <= 0) {
+            throw new RuntimeException("Nu mai sunt exemplare disponibile!");
+        }
+
+        Borrow borrow = new Borrow();
+        borrow.setUserId(userId);
+        borrow.setBookId(bookId);
+        borrow.setBookTitle(book.getTitle());
+        borrow.setBookAuthor(book.getAuthor());
+        borrow.setBookImage(book.getImage());
+
+        // Status nou
+        borrow.setStatus("pending");
+
+        LocalDateTime now = LocalDateTime.now();
+        borrow.setReservationDate(now);
+        borrow.setReservationExpiresAt(now.plusDays(3));
+
+        borrow.setBorrowDate(null);
+        borrow.setReturnDate(null);
+        borrow.setConfirmDate(null);
+        borrow.setDueDate(null);
+
+        return borrowRepository.save(borrow);
+    }
+
+    @Transactional
+    public Borrow confirmBorrow(Long borrowId) {
+
+        Borrow borrow = borrowRepository.findById(borrowId)
+                .orElseThrow(() -> new RuntimeException("Rezervarea nu există"));
+
+        if (!borrow.getStatus().equals("pending")) {
+            throw new RuntimeException("Numai rezervările pot fi confirmate.");
+        }
+
+        Book book = bookRepository.findById(borrow.getBookId())
+                .orElseThrow(() -> new RuntimeException("Cartea nu a fost găsită"));
+
+        if (book.getStock() <= 0) {
+            throw new RuntimeException("Cartea nu mai este în stoc pentru confirmare!");
+        }
+
+        // Scădem stocul abia ACUM
+        book.setStock(book.getStock() - 1);
+
+        if (book.getStock() == 0) {
+            book.setStatus("indisponibil");
+        }
+
+        bookRepository.save(book);
+
+        // Convertim rezervarea în împrumut activ
+        LocalDateTime now = LocalDateTime.now();
+        borrow.setStatus("active");
+        borrow.setBorrowDate(now);      // 🔥 ADĂUGAT !!!
+        borrow.setConfirmDate(now);
+        borrow.setDueDate(now.plusDays(14));
+
+        return borrowRepository.save(borrow);
     }
 
 }

@@ -26,20 +26,29 @@ public class Borrow {
     @Column(name = "book_image")
     private String bookImage;
 
-    @Column(name = "borrow_date", nullable = false)
+    @Column(name = "borrow_date")
     private LocalDateTime borrowDate;
 
     @Column(name = "return_date")
     private LocalDateTime returnDate;
 
+    @Column(name = "reservation_date")
+    private LocalDateTime reservationDate;
+
+    @Column(name = "reservation_expires_at")
+    private LocalDateTime reservationExpiresAt;
+
+    @Column(name = "confirm_date")
+    private LocalDateTime confirmDate;
+
+    @Column(name = "due_date")
+    private LocalDateTime dueDate;
+
     @Column(name = "status", nullable = false)
     private String status; // "active" sau "returned"
 
     // Constructori
-    public Borrow() {
-        this.borrowDate = LocalDateTime.now();
-        this.status = "active";
-    }
+    public Borrow() {}
 
     public Borrow(Long userId, Long bookId, String bookTitle, String bookAuthor, String bookImage) {
         this.userId = userId;
@@ -47,8 +56,6 @@ public class Borrow {
         this.bookTitle = bookTitle;
         this.bookAuthor = bookAuthor;
         this.bookImage = bookImage;
-        this.borrowDate = LocalDateTime.now();
-        this.status = "active";
     }
 
     // Getters și Setters
@@ -122,5 +129,37 @@ public class Borrow {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public LocalDateTime getReservationDate() {
+        return reservationDate;
+    }
+
+    public void setReservationDate(LocalDateTime reservationDate) {
+        this.reservationDate = reservationDate;
+    }
+
+    public LocalDateTime getReservationExpiresAt() {
+        return reservationExpiresAt;
+    }
+
+    public void setReservationExpiresAt(LocalDateTime reservationExpiresAt) {
+        this.reservationExpiresAt = reservationExpiresAt;
+    }
+
+    public LocalDateTime getConfirmDate() {
+        return confirmDate;
+    }
+
+    public void setConfirmDate(LocalDateTime confirmDate) {
+        this.confirmDate = confirmDate;
+    }
+
+    public LocalDateTime getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(LocalDateTime dueDate) {
+        this.dueDate = dueDate;
     }
 }

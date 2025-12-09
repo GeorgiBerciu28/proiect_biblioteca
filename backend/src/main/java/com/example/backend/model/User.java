@@ -30,6 +30,9 @@ public class User {
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(nullable = false)
+    private String subscriptionStatus = "inactive";
+
     public User() {}
 
     public User(String firstName, String lastName, String email, String password, Role role) {
@@ -61,7 +64,17 @@ public class User {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
+    public String getSubscriptionStatus() {
+        return subscriptionStatus;
+    }
+
+    public void setSubscriptionStatus(String subscriptionStatus) {
+        this.subscriptionStatus = subscriptionStatus;
+    }
+
     public enum Role {
         USER, MANAGER
     }
+
+
 }

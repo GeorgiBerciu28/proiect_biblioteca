@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import PopupMessage from "./PopUpMessage";
 
 export default function Register() {
   useEffect(() => {
@@ -12,6 +13,7 @@ export default function Register() {
   const [parola, setParola] = useState("");
   const [confirmParola, setConfirmParola] = useState("");
   const [error, setError] = useState("");
+  const [popup, setPopup] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
@@ -41,7 +43,7 @@ export default function Register() {
       const data = await response.json();
 
       if (data.id) {
-        alert(data.message || "Înregistrare reușită!");
+        setPopup(data.message || "Înregistrare reușită!");
         navigate("/login");
       } else {
         setError(data.message || "Eroare la înregistrare!");
@@ -181,6 +183,12 @@ export default function Register() {
           </button>
         </form>
       </div>
+      {popup && (
+            <PopupMessage 
+                text={popup} 
+                onClose={() => setPopup(null)} 
+            />
+          )}
     </div>
   );
 }

@@ -10,6 +10,8 @@ export default function AddBook() {
   const [categories, setCategories] = useState<string[]>([]);
   const [image, setImage] = useState<File | null>(null);
   const [message, setMessage] = useState("");
+  const [pdf, setPdf] = useState<File | null>(null);
+
 
   useEffect(() => {
     document.title = "Adaugare | Administratie";
@@ -61,6 +63,11 @@ export default function AddBook() {
     if (image) {
       formData.append("image", image);
     }
+
+    if (pdf) {
+      formData.append("pdf", pdf);
+    }
+
 
     try {
       const res = await fetch("http://localhost:8080/books", {
@@ -157,6 +164,72 @@ export default function AddBook() {
               background: "white",
             }}
           />
+
+          <label
+            style={{
+              display: "block",
+              marginTop: "20px",
+              fontWeight: "bold",
+              color: "#4a0a78",
+              marginBottom: "8px",
+            }}
+          >
+            Adaugă PDF (optional):
+          </label>
+
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                setPdf(e.target.files[0]);
+              }
+            }}
+            style={{
+              width: "100%",
+              padding: "10px",
+              cursor: "pointer",
+              borderRadius: "8px",
+              border: "1px solid #b298cf",
+              background: "white",
+            }}
+          />
+
+          {/* PREVIEW PDF */}
+          {pdf && (
+            <div
+              style={{
+                marginTop: "10px",
+                padding: "12px",
+                background: "#e6d4f8",
+                borderRadius: "10px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                border: "1px solid #b298cf",
+              }}
+            >
+              <span style={{ fontWeight: "bold", color: "#4a0a78" }}>
+                {pdf.name}
+              </span>
+
+              <button
+                onClick={() => setPdf(null)}
+                style={{
+                  background: "#ff4d4d",
+                  color: "white",
+                  border: "none",
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                }}
+              >
+                Șterge
+              </button>
+            </div>
+          )}
+
         </div>
 
         {/* FORMULAR */}

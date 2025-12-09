@@ -32,7 +32,6 @@ export default function DeleteBook() {
 
   // Delete
   const handleDelete = async (id: number) => {
-  if (!confirm("Sigur vrei să ștergi această carte?")) return;
 
   try {
     const res = await fetch(`http://localhost:8080/books/${id}`, {

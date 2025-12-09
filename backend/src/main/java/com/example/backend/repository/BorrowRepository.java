@@ -10,16 +10,10 @@ import java.util.List;
 
 @Repository
 public interface BorrowRepository extends JpaRepository<Borrow, Long> {
-
-
-    List<Borrow> findByUserIdOrderByBorrowDateDesc(Long userId);
-
-
+    List<Borrow> findByUserIdOrderByIdDesc(Long userId);
     List<Borrow> findByStatus(String status);
 
-
     List<Borrow> findByUserIdAndStatus(Long userId, String status);
-
     @Query("""
        SELECT b, COUNT(br) 
        FROM Book b 

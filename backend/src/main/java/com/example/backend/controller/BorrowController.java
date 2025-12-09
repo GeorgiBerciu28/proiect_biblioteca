@@ -1,8 +1,10 @@
 package com.example.backend.controller;
 
+import com.example.backend.dto.BorrowRequest;
 import com.example.backend.model.Book;
 import com.example.backend.model.Borrow;
 import com.example.backend.repository.BookRepository;
+import com.example.backend.repository.BorrowRepository;
 import com.example.backend.service.BorrowService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,8 @@ public class BorrowController {
     private BorrowService borrowService;
     @Autowired
     private BookRepository bookRepository;
+    @Autowired
+    private BorrowRepository borrowRepository;
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Borrow>> getUserBorrowHistory(@PathVariable Long userId) {
         List<Borrow> history = borrowService.getBorrowHistoryByUserId(userId);
@@ -63,6 +67,31 @@ public class BorrowController {
         }
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/reserve")
+    public ResponseEntity<?> reserveBooks(@RequestBody BorrowRequest request) {
+
+        List<Borrow> created = new ArrayList<>();
+
+        for (Long bookId : request.getBookIds()) {
+            Borrow b = borrowService.createReservation(request.getUserId(), bookId);
+            created.add(b);
+        }
+
+        return ResponseEntity.ok(created);
+    }
+
+
+    @PostMapping("/{id}/confirm")
+    public ResponseEntity<?> confirm(@PathVariable Long id) {
+        borrowService.confirmBorrow(id);
+        return ResponseEntity.ok("Împrumut confirmat.");
+    }
+
+    @GetMapping("/pending")
+    public ResponseEntity<List<Borrow>> getPending() {
+        return ResponseEntity.ok(borrowRepository.findByStatus("pending"));
     }
 
 

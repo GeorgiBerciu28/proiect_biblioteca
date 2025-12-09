@@ -17,6 +17,8 @@ export default function AccountDetails() {
   // pentru colorarea casutei la confirmare parola
   const [passwordMatch, setPasswordMatch] = useState<null | boolean>(null);
   const [isConfirmFocused, setIsConfirmFocused] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState("");
+
 
   useEffect(() => {
     const u = localStorage.getItem("user");
@@ -26,8 +28,40 @@ export default function AccountDetails() {
       setFirstName(parsed.firstName);
       setLastName(parsed.lastName);
       setEmail(parsed.email);
+      setSubscriptionStatus(parsed.subscriptionStatus);
     }
   }, []);
+
+  useEffect(() => {
+    const reloadUser = () => {
+      const updated = JSON.parse(localStorage.getItem("user") || "null");
+      if (updated) {
+        setUser(updated);
+        setSubscriptionStatus(updated.subscriptionStatus);
+      }
+    };
+
+    window.addEventListener("userChanged", reloadUser);
+    return () => window.removeEventListener("userChanged", reloadUser);
+  }, []);
+
+
+  const handleDeactivate = async () => {
+    const confirm = window.confirm("Sigur vrei să dezactivezi abonamentul?");
+    if (!confirm) return;
+
+    await fetch(`http://localhost:8080/api/deactivate-subscription/${user.id}`, {
+      method: "POST",
+    });
+
+    alert("Abonamentul a fost dezactivat.");
+
+    const updatedUser = { ...user, subscriptionStatus: "inactive" };
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    setSubscriptionStatus("inactive");
+    window.dispatchEvent(new Event("userChanged"));
+  };
+
 
   // salvarea modificarilor (nume / email / parola)
   const handleSave = async () => {
@@ -36,7 +70,7 @@ export default function AccountDetails() {
       return;
     }
 
-     // trimit datele la backend
+    // trimit datele la backend
     const response = await fetch(`http://localhost:8080/api/users/${user.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -55,7 +89,8 @@ export default function AccountDetails() {
         ...user,
         firstName,
         lastName,
-        email
+        email,
+        subscriptionStatus: user.subscriptionStatus
       };
 
       localStorage.setItem("user", JSON.stringify(updatedUser));
@@ -169,7 +204,7 @@ export default function AccountDetails() {
           onBlur={() => setIsConfirmFocused(false)}
           style={{
             ...inputStyle,
-             // colorarea casutei
+            // colorarea casutei
             backgroundColor:
               !isConfirmFocused
                 ? "#f1f1f1"
@@ -181,7 +216,63 @@ export default function AccountDetails() {
           }}
         />
 
-        {/* buton salvare */}  
+
+        {subscriptionStatus === "active" && (
+          <button
+            onClick={handleDeactivate}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: "red",
+              color: "white",
+              borderRadius: "10px",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "1.2rem",
+              marginTop: "20px"
+            }}
+          >
+            Dezactivează abonamentul
+          </button>
+        )}
+
+        {subscriptionStatus === "inactive" && (
+          <div
+            style={{
+              marginTop: "15px",
+              padding: "12px",
+              backgroundColor: "#ffe6e6",
+              border: "1px solid #ff9090",
+              borderRadius: "10px",
+              color: "#c40000",
+              fontWeight: "bold",
+              textAlign: "center",
+              fontSize: "1.1rem"
+            }}
+          >
+            Abonament INACTIV — activează abonamentul din meniu!
+          </div>
+        )}
+        {subscriptionStatus === "pending" && (
+          <div
+            style={{
+              marginTop: "15px",
+              padding: "12px",
+              backgroundColor: "#fff3cd",
+              border: "1px solid #ffe58f",
+              borderRadius: "10px",
+              color: "#a68500",
+              fontWeight: "bold",
+              textAlign: "center",
+              fontSize: "1.1rem"
+            }}
+          >
+            ⏳ Cererea ta este în curs de aprobare...
+          </div>
+        )}
+
+
+
+        {/* buton salvare */}
         <button
           onClick={handleSave}
           style={{

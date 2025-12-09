@@ -44,7 +44,8 @@ public class BookController {
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<?> addBook(
             @RequestPart("data") AddBookRequest data,
-            @RequestPart(value = "image", required = false) MultipartFile image
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            @RequestPart(value = "pdf", required = false) MultipartFile pdf
     ) {
         try {
             String fileName = null;
@@ -54,6 +55,15 @@ public class BookController {
                 Path imagePath = Paths.get(UPLOAD_DIR + fileName);
                 Files.createDirectories(imagePath.getParent());
                 Files.write(imagePath, image.getBytes());
+            }
+
+            String pdfName = null;
+
+            if (pdf != null && !pdf.isEmpty()) {
+                pdfName = System.currentTimeMillis() + "_" + pdf.getOriginalFilename();
+                Path pdfPath = Paths.get(UPLOAD_DIR + pdfName);
+                Files.createDirectories(pdfPath.getParent());
+                Files.write(pdfPath, pdf.getBytes());
             }
 
             // ========= FIX: folosim setters, nu constructor inexistent =========
@@ -66,6 +76,8 @@ public class BookController {
             book.setImage(fileName);
             book.setCategories(data.getCategories());
             book.setStock(data.getStock());
+            book.setPdf(pdfName);
+
 
             bookRepository.save(book);
             return ResponseEntity.ok("Cartea a fost adaugată!");
@@ -145,7 +157,8 @@ public class BookController {
     public ResponseEntity<?> updateBook(
             @PathVariable Long id,
             @RequestPart("data") AddBookRequest data,
-            @RequestPart(value = "image", required = false) MultipartFile image
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            @RequestPart(value = "pdf", required = false) MultipartFile pdf
     ) {
         try {
             Book book = bookRepository.findById(id).orElse(null);
@@ -168,6 +181,14 @@ public class BookController {
                 Files.write(imagePath, image.getBytes());
                 book.setImage(fileName);
             }
+            if (pdf != null && !pdf.isEmpty()) {
+                String pdfName = System.currentTimeMillis() + "_" + pdf.getOriginalFilename();
+                Path pdfPath = Paths.get(UPLOAD_DIR + pdfName);
+                Files.createDirectories(pdfPath.getParent());
+                Files.write(pdfPath, pdf.getBytes());
+                book.setPdf(pdfName);
+            }
+
 
             bookRepository.save(book);
             return ResponseEntity.ok("Cartea a fost actualizată!");

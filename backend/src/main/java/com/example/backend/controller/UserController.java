@@ -5,6 +5,7 @@ import com.example.backend.model.User;
 import com.example.backend.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -65,5 +66,65 @@ public class UserController {
             return ResponseEntity.status(500).body("Eroare la încărcarea utilizatorilor.");
         }
     }
+
+    @GetMapping("/users/{id}")
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+        Optional<User> user = userRepository.findById(id);
+
+        if (user.isEmpty()) {
+            return ResponseEntity.status(404).body("User not found");
+        }
+
+        return ResponseEntity.ok(user.get());
+    }
+
+    @PostMapping("/request-subscription/{id}")
+    public ResponseEntity<?> requestSubscription(@PathVariable Long id) {
+        User user = userRepository.findById(id).orElse(null);
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+
+        user.setSubscriptionStatus("pending");
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Cererea a fost trimisă administratorului.");
+    }
+
+    @GetMapping("/pending-subscriptions")
+    public ResponseEntity<?> getPendingSubscriptions() {
+        List<User> pending = userRepository.findBySubscriptionStatus("pending");
+        return ResponseEntity.ok(pending);
+    }
+
+    @PostMapping("/approve-subscription/{id}")
+    public ResponseEntity<?> approveSubscription(@PathVariable Long id) {
+        User user = userRepository.findById(id).orElse(null);
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+
+        user.setSubscriptionStatus("active");
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Abonament activat.");
+    }
+
+    @PostMapping("/deactivate-subscription/{id}")
+    public ResponseEntity<?> deactivateSubscription(@PathVariable Long id) {
+        User user = userRepository.findById(id).orElse(null);
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+
+        user.setSubscriptionStatus("inactive");
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Abonament dezactivat.");
+    }
+
 
 }

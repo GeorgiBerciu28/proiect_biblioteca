@@ -18,7 +18,7 @@ public class UserService {
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            return new AuthResponse(null, null, null, null, null, "Email deja înregistrat!");
+            return new AuthResponse(null, null, null, null, null, null,"Email deja înregistrat!");
         }
 
         User user = new User();
@@ -27,6 +27,7 @@ public class UserService {
         user.setEmail(request.getEmail());
         user.setPassword(request.getPassword());
         user.setRole(User.Role.USER);
+        user.setSubscriptionStatus("inactive");
 
         User savedUser = userRepository.save(user);
 
@@ -36,6 +37,7 @@ public class UserService {
                 savedUser.getLastName(),
                 savedUser.getEmail(),
                 savedUser.getRole().name(),
+                savedUser.getSubscriptionStatus(),
                 "\n" +
                         "Registration successful!"
         );
@@ -45,13 +47,13 @@ public class UserService {
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
 
         if (userOpt.isEmpty()) {
-            return new AuthResponse(null, null, null, null, null, "Email sau parolă greșită!");
+            return new AuthResponse(null, null, null, null, null,  null, "Email sau parolă greșită!");
         }
 
         User user = userOpt.get();
 
         if (!user.getPassword().equals(request.getPassword())) {
-            return new AuthResponse(null, null, null, null, null, "Email sau parolă greșită!");
+            return new AuthResponse(null, null, null, null, null, null, "Email sau parolă greșită!");
         }
 
         return new AuthResponse(
@@ -60,6 +62,7 @@ public class UserService {
                 user.getLastName(),
                 user.getEmail(),
                 user.getRole().name(),
+                user.getSubscriptionStatus(),
                 "Successful authentication!"
         );
     }

@@ -19,6 +19,10 @@ import TermsAndConditions from "./pages/TermsAndConditions";
 import Favorite from "./pages/Favorite";
 import MostRead from "./pages/MostRead";
 import BookDetail from "./pages/BookDetail";
+import ActivareAbonament from "./pages/admin/ActivareAbonament";
+import Abonament from "./pages/Abonament";
+import ConfirmareRezervareCarti from "./pages/admin/ConfirmareRezervareCarti";
+
 
 function App() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -29,7 +33,10 @@ function App() {
   const [showMenuCategories, setShowMenuCategories] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
-  
+  const [pendingCount, setPendingCount] = useState(0);
+  const [pendingBorrowCount, setPendingBorrowCount] = useState(0);
+
+
   const subNavLinkStyle: React.CSSProperties = {
     color: "white",
     fontWeight: "bold",
@@ -69,12 +76,28 @@ function App() {
 
     window.addEventListener("userChanged", onUserChange);
     window.addEventListener("cartChanged", onCartChange);
-    
+
     return () => {
       window.removeEventListener("userChanged", onUserChange);
       window.removeEventListener("cartChanged", onCartChange);
     };
   }, []);
+
+  // pentru bulinuta rpsie de ;a activare abonament utilizatori
+  useEffect(() => {
+    fetch("http://localhost:8080/api/pending-subscriptions")
+      .then(res => res.json())
+      .then(data => setPendingCount(data.length))
+      .catch(() => { });
+  }, []);
+
+  useEffect(() => {
+    fetch("http://localhost:8080/api/borrows/pending")
+      .then(res => res.json())
+      .then(data => setPendingBorrowCount(data.length))
+      .catch(() => { });
+  }, []);
+
 
   useEffect(() => {
     let lastScroll = window.scrollY;
@@ -94,6 +117,74 @@ function App() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // LISTENER pentru actualizarea badge-ului roșu după activarea abonamentului
+  useEffect(() => {
+    const updatePending = (e: any) => {
+      setPendingCount(e.detail);
+    };
+
+    window.addEventListener("pendingUpdated", updatePending);
+
+    return () => {
+      window.removeEventListener("pendingUpdated", updatePending);
+    };
+  }, []);
+
+    // LISTENER pentru bulinuța roșie de rezervări cărți
+useEffect(() => {
+  const updatePendingBorrow = (e: any) => {
+    setPendingBorrowCount(e.detail);
+  };
+
+  window.addEventListener("pendingBorrowsUpdated", updatePendingBorrow);
+
+  return () => {
+    window.removeEventListener("pendingBorrowsUpdated", updatePendingBorrow);
+  };
+}, []);
+
+// LISTENER pentru actualizarea bulinuței când un utilizator face o rezervare
+useEffect(() => {
+  const refreshPendingBorrows = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/borrows/pending");
+      const data = await res.json();
+      setPendingBorrowCount(data.length);
+    } catch (err) {
+      console.error("Eroare la încărcarea rezervărilor pending", err);
+    }
+  };
+
+  window.addEventListener("reservationsChanged", refreshPendingBorrows);
+
+  return () =>
+    window.removeEventListener("reservationsChanged", refreshPendingBorrows);
+}, []);
+
+
+
+  // LISTENER pentru actualizarea abonamentului utilizatorului
+  useEffect(() => {
+    const refreshUser = async (e: any) => {
+      const userId = e.detail;
+
+      // preluăm userul actualizat din backend
+      const res = await fetch(`http://localhost:8080/api/users/${userId}`);
+      const updatedUser = await res.json();
+
+      // salvăm în localStorage
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+
+      // notificăm componentele
+      window.dispatchEvent(new Event("userChanged"));
+    };
+
+    window.addEventListener("forceRefreshUser", refreshUser);
+
+    return () => window.removeEventListener("forceRefreshUser", refreshUser);
+  }, []);
+
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -169,7 +260,7 @@ function App() {
           Istoric împrumuturi
         </Link>
 
-        {currentUser.role === "USER" && (
+        {currentUser.role && (
           <Link
             to="/return-books"
             style={{
@@ -194,7 +285,7 @@ function App() {
             border: "none",
             color: "red",
             fontWeight: "bold",
-            fontSize: "1.0rem",
+            fontSize: "1.2rem",
             cursor: "pointer",
             textAlign: "center",
             marginTop: "4px",
@@ -225,14 +316,14 @@ function App() {
         }}
       >
         <h2 style={{ margin: 0, color: "white", fontSize: "2.3rem" }}>📖 Library</h2>
-        
-        {(!currentUser || currentUser.role === "USER") && (
+
+        {(!currentUser || currentUser) && (
           <input
             type="text"
             placeholder="Caută după titlu, autor sau descriere..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={handleSearch}
+            onKeyDown={handleSearch}
             style={{
               marginLeft: "6px",
               padding: "10px 15px",
@@ -252,26 +343,83 @@ function App() {
           <div
             style={{
               position: "relative",
-              marginRight: "20px",
+              marginRight: "500px",
             }}
             onMouseEnter={() => setShowAdminMenu(true)}
             onMouseLeave={() => setShowAdminMenu(false)}
           >
-            <div
-              style={{
-                padding: "12px 22px",
-                backgroundColor: "#8e44ad",
-                color: "white",
-                fontWeight: "bold",
-                fontSize: "1.8rem",
-                borderRadius: "12px",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                textAlign: "center",
-              }}
-            >
-              Panou Administrație ▼
+            <div style={{ position: "relative" }}>
+
+              <div
+                style={{
+                  padding: "12px 22px",
+                  backgroundColor: "#8e44ad",
+                  color: "white",
+                  fontWeight: "bold",
+                  fontSize: "1.8rem",
+                  borderRadius: "12px",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  textAlign: "center",
+                  position: "relative",
+                  minWidth: "260px",
+                }}
+              >
+                Panou Administrație ▼
+              </div>
+
+              {pendingCount > 0 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "-5px",
+                    right: "-5px",
+                    minWidth: "22px",
+                    height: "22px",
+                    padding: "0 5px",
+                    backgroundColor: "red",
+                    borderRadius: "50%",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    color: "white",
+                    fontSize: "0.85rem",
+                    fontWeight: "bold",
+                    lineHeight: 1,
+                    boxShadow: "0 0 5px rgba(0,0,0,0.3)",
+                  }}
+                >
+                  {pendingCount}
+                </div>
+              )}
+
+              {pendingBorrowCount > 0 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "-5px",
+                    right: "-5px",
+                    minWidth: "22px",
+                    height: "22px",
+                    padding: "0 5px",
+                    backgroundColor: "red",
+                    borderRadius: "50%",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    color: "white",
+                    fontSize: "0.85rem",
+                    fontWeight: "bold",
+                    lineHeight: 1,
+                    boxShadow: "0 0 5px rgba(0,0,0,0.3)",
+                  }}
+                >
+                  {pendingBorrowCount}
+                </div>
+              )}
+
             </div>
+
 
             {showAdminMenu && (
               <div
@@ -284,7 +432,7 @@ function App() {
                   borderRadius: "12px",
                   padding: "15px 20px",
                   display: "flex",
-                  flexDirection: "column",
+                  flexDirection: "column", 
                   gap: "12px",
                   boxShadow: "0 4px 15px rgba(0,0,0,0.25)",
                   minWidth: "500px",
@@ -303,6 +451,87 @@ function App() {
                 >
                   Vezi conturi utilizatori
                 </Link>
+
+                <div style={{ position: "relative", width: "100%", display: "flex", justifyContent: "center" }}>
+                  <Link
+                    to="/admin/users/activate"
+                    style={{
+                      color: "white",
+                      textDecoration: "none",
+                      fontWeight: "bold",
+                      fontSize: "1.5rem",
+                      textAlign: "center",
+                      padding: "8px 0",
+                      width: "100%"
+                    }}
+                  >
+                    Activare Abonament Utilizatori
+                  </Link>
+
+                  {pendingCount > 0 && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        right: "45px",
+                        top: "8px",
+                        width: "18px",
+                        height: "18px",
+                        backgroundColor: "red",
+                        borderRadius: "50%",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        color: "white",
+                        fontSize: "0.75rem",
+                        fontWeight: "bold"
+                      }}
+                    >
+                      {pendingCount}
+                    </div>
+                  )}
+
+                </div>
+
+                <div style={{ position: "relative", width: "100%", display: "flex", justifyContent: "center" }}>
+                  <Link
+                    to="/admin/confirm-borrow"
+                    style={{
+                      color: "white",
+                      textDecoration: "none",
+                      fontWeight: "bold",
+                      fontSize: "1.5rem",
+                      textAlign: "center",
+                      padding: "8px 0",
+                      width: "100%"
+                    }}
+                  >
+                    Confirmă împrumuturi
+                  </Link>
+
+                  {pendingBorrowCount > 0 && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        right: "45px",
+                        top: "8px",
+                        width: "18px",
+                        height: "18px",
+                        backgroundColor: "red",
+                        borderRadius: "50%",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        color: "white",
+                        fontSize: "0.75rem",
+                        fontWeight: "bold"
+                      }}
+                    >
+                      {pendingBorrowCount}
+                    </div>
+                  )}
+                </div>
+
+
 
                 <div
                   style={{ position: "relative" }}
@@ -397,93 +626,95 @@ function App() {
           </div>
         )}
 
-{/* WRAPPER ICONIȚE */}
-<div style={{ display: "flex", alignItems: "center", gap: "5px", marginRight: "80px" }}>
-  
-  {/* COȘ DE CUMPĂRĂTURI */}
-  {currentUser && currentUser.role === "USER" && (
-    <Link to="/borrow" style={{ position: "relative", textDecoration: "none" }}>
-      <div
-        style={{
-          width: "60px",
-          height: "60px",
-          borderRadius: "50%",
-          backgroundColor: "white",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          cursor: "pointer",
-          position: "relative"
-        }}
-      >
-        <span style={{ fontSize: "2rem" }}>🛒</span>
-        {cartCount > 0 && (
+        {/* WRAPPER ICONIȚE */}
+        <div style={{ display: "flex", alignItems: "center", gap: "5px", marginRight: "80px" }}>
+
+          {/* COȘ DE CUMPĂRĂTURI */}
+
+          <Link to="/borrow" style={{ position: "relative", textDecoration: "none" }}>
+            <div
+              style={{
+                width: "60px",
+                height: "60px",
+                borderRadius: "50%",
+                backgroundColor: "white",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                cursor: "pointer",
+                position: "relative"
+              }}
+            >
+              <span style={{ fontSize: "2rem" }}>🛒</span>
+              {cartCount > 0 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "-5px",
+                    right: "-5px",
+                    backgroundColor: "red",
+                    color: "white",
+                    borderRadius: "50%",
+                    width: "25px",
+                    height: "25px",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    fontSize: "0.9rem",
+                    fontWeight: "bold"
+                  }}
+                >
+                  {cartCount}
+                </div>
+              )}
+            </div>
+          </Link>
+
+
+          {/* MENIU UTILIZATOR */}
           <div
             style={{
-              position: "absolute",
-              top: "-5px",
-              right: "-5px",
-              backgroundColor: "red",
-              color: "white",
-              borderRadius: "50%",
-              width: "25px",
-              height: "25px",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              fontSize: "0.9rem",
-              fontWeight: "bold"
+              position: "relative",
+              marginRight: "80px",
+              paddingBottom: "80px",
+              marginTop: "80px"
             }}
+            onMouseEnter={() => setShowMenu(true)}
+            onMouseLeave={() => setShowMenu(false)}
           >
-            {cartCount}
+            <div
+              style={{
+                width: "60px",
+                height: "60px",
+                borderRadius: "70%",
+                backgroundColor: "white",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                cursor: "pointer",
+              }}
+            >
+              <img
+                src={currentUser?.role === "MANAGER" ? "/admin.jpg" : "/user.png"}
+                style={{ width: "40px", height: "40px" }}
+              />
+            </div>
+
+            {showMenu && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "85px",
+                  left: "50%",
+                  transform: "translateX(-55%)",
+                  zIndex: 2000,
+                }}
+              >
+                {renderMenu()}
+              </div>
+            )}
           </div>
-        )}
-      </div>
-    </Link>
-  )}
-
-  {/* MENIU UTILIZATOR */}
-  <div
-    style={{ position: "relative" ,
-            marginRight: "80px",
-            paddingBottom: "80px",
-            marginTop: "80px"  }}
-    onMouseEnter={() => setShowMenu(true)}
-    onMouseLeave={() => setShowMenu(false)}
-  >
-    <div
-      style={{
-        width: "60px",
-        height: "60px",
-        borderRadius: "70%",
-        backgroundColor: "white",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        cursor: "pointer",
-      }}
-    >
-      <img
-        src={currentUser?.role === "MANAGER" ? "/admin.jpg" : "/user.png"}
-        style={{ width: "40px", height: "40px" }}
-      />
-    </div>
-
-    {showMenu && (
-      <div
-        style={{
-          position: "absolute",
-          top: "85px",
-          left: "50%",
-          transform: "translateX(-55%)",
-          zIndex: 2000,
-        }}
-      >
-        {renderMenu()}
-      </div>
-    )}
-  </div>
-</div>
+        </div>
 
       </nav>
 
@@ -580,8 +811,69 @@ function App() {
 
         <Link to="/cele-mai-citite" style={subNavLinkStyle}>
           Cele mai citite
-        </Link>  
+        </Link>
 
+        {!currentUser && (
+          <div
+            onClick={() => navigate("/login", { state: { msg: "Trebuie să te loghezi mai întâi pentru a activa abonamentul." } })}
+            style={{
+              ...subNavLinkStyle,
+              backgroundColor: "#ffcbdfff",
+              color: "#6a1b7a",
+              padding: "6px 15px",
+              borderRadius: "12px",
+              fontWeight: "bold",
+              cursor: "pointer"
+            }}
+          >
+            Activează abonament
+          </div>
+        )}
+        {currentUser?.subscriptionStatus === "inactive" && (
+          <Link
+            to="/abonament"
+            style={{
+              ...subNavLinkStyle,
+              backgroundColor: "#ffcbdfff",
+              color: "#6a1b7a",
+              padding: "6px 15px",
+              borderRadius: "12px",
+              fontWeight: "bold",
+            }}
+          >
+            Activează abonament
+          </Link>
+        )}
+
+        {currentUser?.subscriptionStatus === "pending" && (
+          <div
+            style={{
+              ...subNavLinkStyle,
+              backgroundColor: "#ffefb3",
+              color: "#a68500",
+              padding: "6px 15px",
+              borderRadius: "12px",
+              fontWeight: "bold",
+            }}
+          >
+            ⏳ Cerere în așteptare
+          </div>
+        )}
+
+        {currentUser?.subscriptionStatus === "active" && (
+          <div
+            style={{
+              ...subNavLinkStyle,
+              backgroundColor: "#8ef08e",
+              color: "green",
+              padding: "6px 15px",
+              borderRadius: "12px",
+              fontWeight: "bold",
+            }}
+          >
+            ✔ Abonament activ
+          </div>
+        )}
 
       </div>
 
@@ -596,6 +888,7 @@ function App() {
           <Route path="/admin/books/edit" element={<EditBook />} />
           <Route path="/admin/books/delete" element={<DeleteBook />} />
           <Route path="/admin/users" element={<UserList />} />
+          <Route path="/admin/users/activate" element={<ActivareAbonament />} />
           <Route path="/borrow" element={<Borrow />} />
           <Route path="/category/:category" element={<CategoryPage />} />
           <Route path="/borrow-history" element={<BorrowHistory />} />
@@ -604,11 +897,13 @@ function App() {
           <Route path="/search" element={<SearchResults />} />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/favorites" element={<Favorite />} />
-          <Route path="/cele-mai-citite" element={<MostRead />}/>
-          <Route path="/book/:id" element={<BookDetail/>}/>
+          <Route path="/cele-mai-citite" element={<MostRead />} />
+          <Route path="/book/:id" element={<BookDetail />} />
+          <Route path="/abonament" element={<Abonament />} />
+          <Route path="/admin/confirm-borrow" element={<ConfirmareRezervareCarti />} />
         </Routes>
       </div>
-      
+
       {/* FOOTER */}
       <footer
         style={{
@@ -622,40 +917,40 @@ function App() {
         }}
       >
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <h2 style={{ 
-            fontSize: "2.5rem", 
+          <h2 style={{
+            fontSize: "2.5rem",
             marginBottom: "30px",
             fontWeight: "bold",
             textAlign: "center"
           }}>
             📚 Despre librăria noastră
           </h2>
-          
+
           <div style={{ display: "flex", gap: "50px", marginBottom: "40px" }}>
             <div style={{ flex: 1 }}>
-              <p style={{ 
-                fontSize: "1.2rem", 
-                lineHeight: "1.8", 
+              <p style={{
+                fontSize: "1.2rem",
+                lineHeight: "1.8",
                 textAlign: "justify",
                 marginBottom: "20px"
               }}>
-                Bine ai venit la biblioteca noastră digitală! Suntem pasionați de cărți și de puterea lor 
-                de a transforma vieți. Cu o colecție vastă care cuprinde toate genurile - de la clasici 
-                ai literaturii universale până la cele mai recente bestseller-uri - ne dedicăm să aducem 
+                Bine ai venit la biblioteca noastră digitală! Suntem pasionați de cărți și de puterea lor
+                de a transforma vieți. Cu o colecție vastă care cuprinde toate genurile - de la clasici
+                ai literaturii universale până la cele mai recente bestseller-uri - ne dedicăm să aducem
                 bucuria lecturii în casele voastre.
               </p>
-              <p style={{ 
-                fontSize: "1.2rem", 
-                lineHeight: "1.8", 
+              <p style={{
+                fontSize: "1.2rem",
+                lineHeight: "1.8",
                 textAlign: "justify"
               }}>
-                Platforma noastră vă oferă acces rapid și simplu la mii de titluri, sistem de împrumut 
-                intuitiv și recomandări personalizate. Fie că sunteți în căutarea unei aventuri fantastice, 
-                a unei lecturi educative sau a unei povești de dragoste, veți găsi aici cartea potrivită 
+                Platforma noastră vă oferă acces rapid și simplu la mii de titluri, sistem de împrumut
+                intuitiv și recomandări personalizate. Fie că sunteți în căutarea unei aventuri fantastice,
+                a unei lecturi educative sau a unei povești de dragoste, veți găsi aici cartea potrivită
                 pentru fiecare moment.
               </p>
             </div>
-            
+
             <div style={{ flex: 1 }}>
               <div
                 style={{
@@ -672,7 +967,7 @@ function App() {
                   Să facem lectura accesibilă tuturor și să promovăm cultura literară în comunitate prin tehnologie modernă și servicii de calitate.
                 </p>
               </div>
-              
+
               <div
                 style={{
                   backgroundColor: "rgba(255, 255, 255, 0.1)",
@@ -693,9 +988,9 @@ function App() {
             </div>
           </div>
 
-          <div style={{ 
-            display: "flex", 
-            justifyContent: "center", 
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
             gap: "60px",
             paddingTop: "30px",
             borderTop: "1px solid rgba(255,255,255,0.2)"
@@ -714,8 +1009,8 @@ function App() {
             </div>
           </div>
 
-          <div style={{ 
-            textAlign: "center", 
+          <div style={{
+            textAlign: "center",
             marginTop: "40px",
             paddingTop: "20px",
             borderTop: "1px solid rgba(255,255,255,0.2)",
@@ -723,10 +1018,10 @@ function App() {
             color: "rgba(255,255,255,0.7)"
           }}>
             <div style={{ marginBottom: "15px" }}>
-              <Link 
-                to="/terms" 
-                style={{ 
-                  color: "white", 
+              <Link
+                to="/terms"
+                style={{
+                  color: "white",
                   textDecoration: "underline",
                   fontSize: "1rem",
                   fontWeight: "bold"

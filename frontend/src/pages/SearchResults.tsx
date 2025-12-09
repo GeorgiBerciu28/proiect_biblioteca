@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import PopupMessage from "./PopUpMessage";
 
 interface Book {
   id: number;
@@ -15,14 +16,15 @@ interface Book {
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
-  
+
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [popup, setPopup] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = `Rezultate căutare: ${query}`;
-    
+
     const userData = localStorage.getItem("user");
     if (userData) setUser(JSON.parse(userData));
 
@@ -41,17 +43,17 @@ export default function SearchResults() {
 
   const addToCart = (book: Book) => {
     const cart: Book[] = JSON.parse(localStorage.getItem("cart") || "[]");
-    
+
     const exists = cart.some(item => item.id === book.id);
     if (exists) {
-      alert("Cartea este deja în coș!");
+      setPopup("Cartea este deja în coș!");
       return;
     }
-    
+
     cart.push(book);
     localStorage.setItem("cart", JSON.stringify(cart));
     window.dispatchEvent(new Event("cartChanged"));
-    alert("Carte adăugată în coș!");
+    setPopup("Carte adăugată în coș!");
   };
 
   if (loading) {
@@ -64,23 +66,23 @@ export default function SearchResults() {
 
   return (
     <div style={{ width: "100%", minHeight: "100vh", padding: "40px" }}>
-      <h1 style={{ 
-        textAlign: "center", 
-        fontSize: "2.5rem", 
+      <h1 style={{
+        textAlign: "center",
+        fontSize: "2.5rem",
         color: "#5f2669ff",
         marginBottom: "20px"
       }}>
         🔍 Rezultate pentru: "{query}"
       </h1>
 
-      <p style={{ 
-        textAlign: "center", 
-        fontSize: "1.2rem", 
+      <p style={{
+        textAlign: "center",
+        fontSize: "1.2rem",
         color: "#666",
         marginBottom: "40px"
       }}>
-        {books.length === 0 
-          ? "Nu am găsit nicio carte care să corespundă căutării tale." 
+        {books.length === 0
+          ? "Nu am găsit nicio carte care să corespundă căutării tale."
           : `Am găsit ${books.length} ${books.length === 1 ? "carte" : "cărți"}`}
       </p>
 
@@ -96,8 +98,8 @@ export default function SearchResults() {
           <p style={{ fontSize: "1.3rem", marginBottom: "20px" }}>
             💡 Sugestii pentru căutare:
           </p>
-          <ul style={{ 
-            listStyle: "none", 
+          <ul style={{
+            listStyle: "none",
             padding: 0,
             fontSize: "1.1rem",
             lineHeight: "2"
@@ -161,7 +163,7 @@ export default function SearchResults() {
               <h2 style={{ fontSize: "1.2rem", marginBottom: "5px" }}>{book.title}</h2>
               <p style={{ margin: 0, fontWeight: "bold" }}>{book.author}</p>
               <p style={{ margin: 0 }}>An: {book.year}</p>
-              
+
               <div style={{ margin: 0 }}>
                 {book.categories.map((cat, index) => (
                   <p
@@ -227,6 +229,12 @@ export default function SearchResults() {
             </div>
           ))}
         </div>
+      )}
+      {popup && (
+        <PopupMessage
+          text={popup}
+          onClose={() => setPopup(null)}
+        />
       )}
     </div>
   );

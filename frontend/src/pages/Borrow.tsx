@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import PopupMessage from "./PopUpMessage";
 
 interface Book {
   id: number;
@@ -14,6 +15,7 @@ interface Book {
 export default function Borrow() {
   const [cart, setCart] = useState<Book[]>([]);
   const [selectedBooks, setSelectedBooks] = useState<number[]>([]);
+  const [popup, setPopup] = useState<string | null>(null);
 
   const user = JSON.parse(localStorage.getItem("user") || "null");
 
@@ -34,52 +36,59 @@ export default function Borrow() {
   };
 
   const removeFromCart = (bookId: number) => {
-    const newCart = cart.filter((b) => b.id !== bookId);
-    setCart(newCart);
-    localStorage.setItem("cart", JSON.stringify(newCart));
-    setSelectedBooks((prev) => prev.filter((id) => id !== bookId));
-  };
+  const newCart = cart.filter((b) => b.id !== bookId);
+  setCart(newCart);
+  localStorage.setItem("cart", JSON.stringify(newCart));
+  setSelectedBooks((prev) => prev.filter((id) => id !== bookId));
+
+  window.dispatchEvent(new Event("cartChanged"));
+};
+
 
   const confirmBorrow = async () => {
-    if (selectedBooks.length === 0) {
-      alert("Selectează cel puțin o carte!");
+  if (selectedBooks.length === 0) {
+    setPopup("Selectează cel puțin o carte!");
+    return;
+  }
+
+  if (!user) {
+    setPopup("Trebuie să fii logat!");
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:8080/api/borrows/reserve", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: user.id,
+        bookIds: selectedBooks,
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      setPopup("Eroare: " + text);
       return;
     }
 
-    if (!user) {
-      alert("Trebuie să fii autentificat!");
-      return;
-    }
+    setPopup("Rezervare efectuată! Ai 3 zile să ridici cartea.");
 
-try {
-      const response = await fetch("http://localhost:8080/books/borrow", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          bookIds: selectedBooks,
-        }),
-      });
+    localStorage.removeItem("cart");
+    setCart([]);
+    setSelectedBooks([]);
 
-      if (!response.ok) {
-        const text = await response.text();
-        alert("Eroare: " + text);
-        return;
-      }
+    window.dispatchEvent(new Event("cartChanged"));
+    window.dispatchEvent(new Event("reservationsChanged"));
 
-      alert("Împrumut efectuat!");
+  } catch (error) {
+    console.error(error);
+    alert("Eroare de conexiune cu serverul.");
+  }
+};
 
-      localStorage.removeItem("cart");
-      setCart([]);
-      setSelectedBooks([]);
-
-    } catch (error) {
-      console.error(error);
-      alert("Eroare de conexiune cu serverul.");
-    }
-  };
 
   return (
     <div style={{ padding: "40px", maxWidth: "900px", margin: "0 auto" }}>
@@ -187,9 +196,10 @@ try {
             marginLeft: "auto",
           }}
         >
-          Confirmă împrumutul
+          Confirmă rezervarea. Vei avea 3 zile la dispozitie sa ridici cartile
         </button>
       )}
+      {popup && ( <PopupMessage text={popup} onClose={() => setPopup(null)} /> )}
     </div>
   );
 }

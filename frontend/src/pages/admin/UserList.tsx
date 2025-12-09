@@ -5,17 +5,17 @@ interface User {
   firstName: string;
   lastName: string;
   email: string;
-  role: string;
+  subscriptionStatus: string;
 }
 
 export default function UserList() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
-  
-  
+
+
   useEffect(() => {
-   
+
     document.title = "Vizualizare conturi | Administratie";
   }, []);
 
@@ -77,7 +77,8 @@ export default function UserList() {
             <th style={th}>Nume</th>
             <th style={th}>Prenume</th>
             <th style={th}>Email</th>
-            <th style={th}>Rol</th>
+            <th style={th}>Abonament</th>
+
           </tr>
         </thead>
 
@@ -88,7 +89,26 @@ export default function UserList() {
               <td style={td}>{u.lastName}</td>
               <td style={td}>{u.firstName}</td>
               <td style={td}>{u.email}</td>
-              <td style={td}>{u.role}</td>
+              <td style={td}>
+                <span
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "20px",
+                    fontWeight: "bold",
+                    color: "white",
+                    backgroundColor:
+                      u.subscriptionStatus === "active"
+                        ? "green"
+                        : u.subscriptionStatus === "pending"
+                          ? "orange"
+                          : "red",
+                  }}
+                >
+                  {u.subscriptionStatus === "active" && "Activ"}
+                  {u.subscriptionStatus === "pending" && "În așteptare"}
+                  {u.subscriptionStatus === "inactive" && "Inactiv"}
+                </span>
+              </td>
             </tr>
           ))}
         </tbody>

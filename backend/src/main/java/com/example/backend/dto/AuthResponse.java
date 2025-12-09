@@ -6,16 +6,18 @@ public class AuthResponse {
     private String lastName;
     private String email;
     private String role;
+    private String subscriptionStatus;
     private String message;
 
     public AuthResponse() {}
 
-    public AuthResponse(Long id, String firstName, String lastName, String email, String role, String message) {
+    public AuthResponse(Long id, String firstName, String lastName, String email, String role, String subscriptionStatus,  String message) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.role = role;
+        this.subscriptionStatus = subscriptionStatus;
         this.message = message;
     }
 
@@ -33,6 +35,9 @@ public class AuthResponse {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getSubscriptionStatus() { return subscriptionStatus; }
+    public void setSubscriptionStatus(String subscriptionStatus) { this.subscriptionStatus = subscriptionStatus;}
 
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }
