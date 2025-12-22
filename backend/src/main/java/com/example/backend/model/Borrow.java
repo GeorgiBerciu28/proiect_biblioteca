@@ -45,7 +45,7 @@ public class Borrow {
     private LocalDateTime dueDate;
 
     @Column(name = "status", nullable = false)
-    private String status; // "active" sau "returned"
+    private String status;
 
     // Constructori
     public Borrow() {}

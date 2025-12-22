@@ -17,6 +17,14 @@ public class UserService {
     private UserRepository userRepository;
 
     public AuthResponse register(RegisterRequest request) {
+
+        if (request.getEmail().toLowerCase().contains("@library")) {
+            return new AuthResponse(
+                    null, null, null, null, null, null,
+                    "Domeniul @library este rezervat exclusiv pentru administratori!"
+            );
+        }
+
         if (userRepository.existsByEmail(request.getEmail())) {
             return new AuthResponse(null, null, null, null, null, null,"Email deja înregistrat!");
         }
@@ -38,8 +46,7 @@ public class UserService {
                 savedUser.getEmail(),
                 savedUser.getRole().name(),
                 savedUser.getSubscriptionStatus(),
-                "\n" +
-                        "Registration successful!"
+                "Registration successful!"
         );
     }
 

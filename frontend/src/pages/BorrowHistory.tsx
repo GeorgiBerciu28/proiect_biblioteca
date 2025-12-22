@@ -11,6 +11,11 @@ interface BorrowRecord {
   status: string;
   reservationDate?: string | null;
   reservationExpiresAt?: string | null;
+  bookId: number;
+}
+
+interface UserRating {
+  rating: number;
 }
 
 export default function BorrowHistory() {
@@ -18,6 +23,7 @@ export default function BorrowHistory() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "active" | "returned">("all");
   const [now, setNow] = useState<number>(Date.now());
+  const [ratings, setRatings] = useState<{ [key: number]: number }>({});
 
   const user = JSON.parse(localStorage.getItem("user") || "null");
 
@@ -34,9 +40,30 @@ export default function BorrowHistory() {
       .then((data) => {
         setHistory(data);
         setLoading(false);
+
+        // Încărcăm rating-urile pentru cărțile returnate
+        data.forEach((record: BorrowRecord) => {
+          if (record.status === "returned") {
+            fetchUserRating(record.bookId);
+          }
+        });
       })
       .catch(() => setLoading(false));
   }, []);
+
+  const fetchUserRating = async (bookId: number) => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/ratings/user/${user.id}/book/${bookId}`);
+      const data: UserRating = await res.json();
+      
+      setRatings(prev => ({
+        ...prev,
+        [bookId]: data.rating
+      }));
+    } catch (err) {
+      console.error("Eroare la încărcarea rating-ului:", err);
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 60_000);
@@ -82,6 +109,24 @@ export default function BorrowHistory() {
     return { bg: "#90ee90", text: "#006400" };
   };
 
+  const renderStars = (rating: number) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <span
+          key={i}
+          style={{
+            fontSize: "1.5rem",
+            color: i <= rating ? "#ffd700" : "#ddd",
+          }}
+        >
+          ★
+        </span>
+      );
+    }
+    return stars;
+  };
+
   return (
     <div style={{ padding: "40px", maxWidth: "1100px", margin: "0 auto" }}>
       <h1 style={{ marginBottom: "10px", textAlign: "left" }}>Istoric împrumuturi</h1>
@@ -107,6 +152,7 @@ export default function BorrowHistory() {
           {filteredHistory.map((record) => {
             const { bg, text } = getStatusColors(record.status);
             const remaining = record.status === "pending" ? getRemainingTime(record.reservationExpiresAt) : null;
+            const userRating = ratings[record.bookId] || 0;
 
             return (
               <div
@@ -173,10 +219,24 @@ export default function BorrowHistory() {
 
                   {/* returned */}
                   {record.status === "returned" && (
-                    <p>
-                      <strong>Returnată la:</strong>{" "}
-                      {record.returnDate && new Date(record.returnDate).toLocaleString()}
-                    </p>
+                    <>
+                      <p>
+                        <strong>Returnată la:</strong>{" "}
+                        {record.returnDate && new Date(record.returnDate).toLocaleString()}
+                      </p>
+                      
+                      {/* Afișare rating */}
+                      {userRating > 0 && (
+                        <div style={{ marginTop: "10px" }}>
+                          <p style={{ margin: "5px 0", fontWeight: "bold", color: "#7a0fc4" }}>
+                            Rating-ul tău:
+                          </p>
+                          <div style={{ display: "flex", gap: "2px" }}>
+                            {renderStars(userRating)}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {/* timer */}

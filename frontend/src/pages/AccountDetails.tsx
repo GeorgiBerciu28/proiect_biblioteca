@@ -85,15 +85,17 @@ export default function AccountDetails() {
 
     // actualizam local user-ul
     if (response.ok) {
-      const updatedUser = {
-        ...user,
-        firstName,
-        lastName,
-        email,
-        subscriptionStatus: user.subscriptionStatus
-      };
+     const updatedUser = {
+  id: user.id, 
+  firstName,
+  lastName,
+  email,
+  role: user.role,
+  subscriptionStatus: user.subscriptionStatus
+};
 
       localStorage.setItem("user", JSON.stringify(updatedUser));
+
 
 
       window.dispatchEvent(new Event("userChanged"));

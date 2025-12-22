@@ -5,42 +5,24 @@ interface Borrow {
     id: number;
     userId: number;
     bookId: number;
+    userFirstName: string;  // ⭐ ADĂUGAT
+    userLastName: string;   // ⭐ ADĂUGAT
     bookTitle: string;
     bookAuthor: string;
     reservationDate: string;
     reservationExpiresAt: string;
 }
 
-interface User {
-    id: number;
-    firstName: string;
-    lastName: string;
-}
-
 export default function ConfirmareRezervareCarti() {
     const [pending, setPending] = useState<Borrow[]>([]);
-    const [users, setUsers] = useState<Record<number, User>>({});
     const [popup, setPopup] = useState<string | null>(null);
 
     const loadPending = async () => {
         try {
             const response = await fetch("http://localhost:8080/api/borrows/pending");
             const data = await response.json();
-
+            console.log("📋 Pending borrows:", data);
             setPending(data);
-
-            // Load user info
-            data.forEach(async (p: Borrow) => {
-                if (!users[p.userId]) {
-                    const res = await fetch(`http://localhost:8080/api/users/${p.userId}`);
-                    const userData = await res.json();
-
-                    setUsers((prev) => ({
-                        ...prev,
-                        [p.userId]: userData
-                    }));
-                }
-            });
         } catch (error) {
             console.error(error);
             setPopup("Eroare la încărcarea rezervărilor.");
@@ -51,7 +33,6 @@ export default function ConfirmareRezervareCarti() {
         loadPending();
         const handler = () => loadPending();
         window.addEventListener("reservationsChanged", handler);
-
         return () => window.removeEventListener("reservationsChanged", handler);
     }, []);
 
@@ -69,6 +50,7 @@ export default function ConfirmareRezervareCarti() {
             }
 
             setPopup("Împrumutul a fost confirmat!");
+            
             const pendingRes = await fetch("http://localhost:8080/api/borrows/pending");
             const pendingData = await pendingRes.json();
 
@@ -96,11 +78,8 @@ export default function ConfirmareRezervareCarti() {
                 </h3>
             ) : (
                 <table style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    backgroundColor: "#f9f5ff",
-                    borderRadius: "12px",
-                    overflow: "hidden",
+                    width: "100%", borderCollapse: "collapse", backgroundColor: "#f9f5ff",
+                    borderRadius: "12px", overflow: "hidden",
                 }}>
                     <thead>
                         <tr style={{ backgroundColor: "#7a0fc4", color: "white" }}>
@@ -116,38 +95,23 @@ export default function ConfirmareRezervareCarti() {
                         {pending.map((p) => (
                             <tr key={p.id}>
                                 <td style={td}>
-                                    {users[p.userId]
-                                        ? `${users[p.userId].firstName} ${users[p.userId].lastName}`
-                                        : "Loading..."}
+                                    {/* ⭐ AFIȘEAZĂ DIRECT DIN BORROW */}
+                                    <strong>{p.userFirstName} {p.userLastName}</strong>
                                 </td>
 
                                 <td style={td}>
-                                    <strong>{p.bookTitle}</strong>
-                                    <br />
+                                    <strong>{p.bookTitle}</strong><br />
                                     <span style={{ color: "gray" }}>{p.bookAuthor}</span>
                                 </td>
 
-                                <td style={td}>
-                                    {new Date(p.reservationDate).toLocaleString()}
-                                </td>
+                                <td style={td}>{new Date(p.reservationDate).toLocaleString()}</td>
+                                <td style={td}>{new Date(p.reservationExpiresAt).toLocaleString()}</td>
 
                                 <td style={td}>
-                                    {new Date(p.reservationExpiresAt).toLocaleString()}
-                                </td>
-
-                                <td style={td}>
-                                    <button
-                                        onClick={() => confirmBorrow(p.id)}
-                                        style={{
-                                            padding: "8px 14px",
-                                            backgroundColor: "#7a0fc4",
-                                            color: "white",
-                                            border: "none",
-                                            borderRadius: "8px",
-                                            cursor: "pointer",
-                                            fontWeight: "bold",
-                                        }}
-                                    >
+                                    <button onClick={() => confirmBorrow(p.id)} style={{
+                                        padding: "8px 14px", backgroundColor: "#7a0fc4", color: "white",
+                                        border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold",
+                                    }}>
                                         Confirmă împrumutul
                                     </button>
                                 </td>
@@ -162,13 +126,5 @@ export default function ConfirmareRezervareCarti() {
     );
 }
 
-const th: React.CSSProperties = {
-    padding: "12px",
-    textAlign: "left",
-    fontWeight: "bold",
-};
-
-const td: React.CSSProperties = {
-    padding: "12px",
-    borderBottom: "1px solid #ddd",
-};
+const th: React.CSSProperties = { padding: "12px", textAlign: "left", fontWeight: "bold" };
+const td: React.CSSProperties = { padding: "12px", borderBottom: "1px solid #ddd" };

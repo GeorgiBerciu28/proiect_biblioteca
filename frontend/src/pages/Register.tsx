@@ -21,6 +21,12 @@ export default function Register() {
     e.preventDefault();
     setError("");
 
+    // Validare frontend pentru @library
+    if (email.toLowerCase().includes("@library")) {
+      setError("⚠️ Domeniul @library este rezervat exclusiv pentru administratori!");
+      return;
+    }
+
     if (parola !== confirmParola) {
       setError("Parolele nu coincid!");
       return;
@@ -44,7 +50,9 @@ export default function Register() {
 
       if (data.id) {
         setPopup(data.message || "Înregistrare reușită!");
-        navigate("/login");
+        setTimeout(() => {
+          navigate("/login");
+        }, 1500);
       } else {
         setError(data.message || "Eroare la înregistrare!");
       }
@@ -83,9 +91,20 @@ export default function Register() {
         </h2>
 
         {error && (
-          <p style={{ color: "red", fontSize: "0.9rem", marginBottom: "10px" }}>
+          <div
+            style={{
+              backgroundColor: "#ffe6e6",
+              color: "#c00",
+              padding: "10px",
+              borderRadius: "10px",
+              marginBottom: "15px",
+              border: "1px solid #ffb3b3",
+              fontSize: "0.9rem",
+              fontWeight: "bold",
+            }}
+          >
             {error}
-          </p>
+          </div>
         )}
 
         <form onSubmit={handleRegister}>
@@ -123,16 +142,38 @@ export default function Register() {
             type="email"
             placeholder="Email address"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              // Curățăm eroarea dacă utilizatorul modifică email-ul
+              if (error.includes("@library")) {
+                setError("");
+              }
+            }}
             required
             style={{
               padding: "10px",
               width: "250px",
-              marginBottom: "20px",
+              marginBottom: email.toLowerCase().includes("@library") ? "5px" : "20px",
               borderRadius: "20px",
-              border: "1px solid #ccc",
+              border: email.toLowerCase().includes("@library") 
+                ? "2px solid #ff4444" 
+                : "1px solid #ccc",
             }}
           />
+
+          {email.toLowerCase().includes("@library") && (
+            <p style={{ 
+              color: "#ff4444", 
+              fontSize: "0.85rem", 
+              marginTop: "0",
+              marginBottom: "15px",
+              fontWeight: "bold",
+              textAlign: "left",
+              paddingLeft: "10px"
+            }}>
+              ⚠️ Domeniul @library este rezervat pentru administratori
+            </p>
+          )}
 
           <input
             type="password"
@@ -166,9 +207,12 @@ export default function Register() {
 
           <button
             type="submit"
+            disabled={email.toLowerCase().includes("@library")}
             style={{
               padding: "12px",
-              backgroundColor: "#9022a4",
+              backgroundColor: email.toLowerCase().includes("@library") 
+                ? "#cccccc" 
+                : "#9022a4",
               color: "white",
               width: "150px",
               border: "none",
@@ -176,7 +220,11 @@ export default function Register() {
               marginTop: "10px",
               fontSize: "1rem",
               fontWeight: "bold",
-              cursor: "pointer",
+              cursor: email.toLowerCase().includes("@library") 
+                ? "not-allowed" 
+                : "pointer",
+              opacity: email.toLowerCase().includes("@library") ? 0.6 : 1,
+              transition: "all 0.3s",
             }}
           >
             Sign up
@@ -184,11 +232,11 @@ export default function Register() {
         </form>
       </div>
       {popup && (
-            <PopupMessage 
-                text={popup} 
-                onClose={() => setPopup(null)} 
-            />
-          )}
+        <PopupMessage 
+          text={popup} 
+          onClose={() => setPopup(null)} 
+        />
+      )}
     </div>
   );
 }

@@ -22,7 +22,7 @@ import BookDetail from "./pages/BookDetail";
 import ActivareAbonament from "./pages/admin/ActivareAbonament";
 import Abonament from "./pages/Abonament";
 import ConfirmareRezervareCarti from "./pages/admin/ConfirmareRezervareCarti";
-
+import TopRated from "./pages/TopRated";
 
 function App() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -35,7 +35,6 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [pendingCount, setPendingCount] = useState(0);
   const [pendingBorrowCount, setPendingBorrowCount] = useState(0);
-
 
   const subNavLinkStyle: React.CSSProperties = {
     color: "white",
@@ -83,7 +82,7 @@ function App() {
     };
   }, []);
 
-  // pentru bulinuta rpsie de ;a activare abonament utilizatori
+  // Pentru bulinuța roșie de la activare abonament utilizatori
   useEffect(() => {
     fetch("http://localhost:8080/api/pending-subscriptions")
       .then(res => res.json())
@@ -97,7 +96,6 @@ function App() {
       .then(data => setPendingBorrowCount(data.length))
       .catch(() => { });
   }, []);
-
 
   useEffect(() => {
     let lastScroll = window.scrollY;
@@ -131,52 +129,50 @@ function App() {
     };
   }, []);
 
-    // LISTENER pentru bulinuța roșie de rezervări cărți
-useEffect(() => {
-  const updatePendingBorrow = (e: any) => {
-    setPendingBorrowCount(e.detail);
-  };
+  // LISTENER pentru bulinuța roșie de rezervări cărți
+  useEffect(() => {
+    const updatePendingBorrow = (e: any) => {
+      setPendingBorrowCount(e.detail);
+    };
 
-  window.addEventListener("pendingBorrowsUpdated", updatePendingBorrow);
+    window.addEventListener("pendingBorrowsUpdated", updatePendingBorrow);
 
-  return () => {
-    window.removeEventListener("pendingBorrowsUpdated", updatePendingBorrow);
-  };
-}, []);
+    return () => {
+      window.removeEventListener("pendingBorrowsUpdated", updatePendingBorrow);
+    };
+  }, []);
 
-// LISTENER pentru actualizarea bulinuței când un utilizator face o rezervare
-useEffect(() => {
-  const refreshPendingBorrows = async () => {
-    try {
-      const res = await fetch("http://localhost:8080/api/borrows/pending");
-      const data = await res.json();
-      setPendingBorrowCount(data.length);
-    } catch (err) {
-      console.error("Eroare la încărcarea rezervărilor pending", err);
-    }
-  };
+  // LISTENER pentru actualizarea bulinuței când un utilizator face o rezervare
+  useEffect(() => {
+    const refreshPendingBorrows = async () => {
+      try {
+        const res = await fetch("http://localhost:8080/api/borrows/pending");
+        const data = await res.json();
+        setPendingBorrowCount(data.length);
+      } catch (err) {
+        console.error("Eroare la încărcarea rezervărilor pending", err);
+      }
+    };
 
-  window.addEventListener("reservationsChanged", refreshPendingBorrows);
+    window.addEventListener("reservationsChanged", refreshPendingBorrows);
 
-  return () =>
-    window.removeEventListener("reservationsChanged", refreshPendingBorrows);
-}, []);
-
-
+    return () =>
+      window.removeEventListener("reservationsChanged", refreshPendingBorrows);
+  }, []);
 
   // LISTENER pentru actualizarea abonamentului utilizatorului
   useEffect(() => {
     const refreshUser = async (e: any) => {
       const userId = e.detail;
 
-      // preluăm userul actualizat din backend
+      // Preluăm userul actualizat din backend
       const res = await fetch(`http://localhost:8080/api/users/${userId}`);
       const updatedUser = await res.json();
 
-      // salvăm în localStorage
+      // Salvăm în localStorage
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
-      // notificăm componentele
+      // Notificăm componentele
       window.dispatchEvent(new Event("userChanged"));
     };
 
@@ -184,7 +180,6 @@ useEffect(() => {
 
     return () => window.removeEventListener("forceRefreshUser", refreshUser);
   }, []);
-
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -260,22 +255,23 @@ useEffect(() => {
           Istoric împrumuturi
         </Link>
 
-        {currentUser.role && (
-          <Link
-            to="/return-books"
-            style={{
-              padding: "10px",
-              textDecoration: "none",
-              color: "#4caf50",
-              fontWeight: "bold",
-              fontSize: "1.2rem",
-              marginBottom: "4px",
-              textAlign: "center"
-            }}
-          >
-            Returnare cărți
-          </Link>
-        )}
+        {currentUser && (
+  <Link
+    to="/return-books"
+    style={{
+      padding: "10px",
+      textDecoration: "none",
+      color: "#4caf50",
+      fontWeight: "bold",
+      fontSize: "1.2rem",
+      marginBottom: "4px",
+      textAlign: "center"
+    }}
+  >
+    Returnare cărți
+  </Link>
+)}
+
 
         <button
           onClick={handleLogout}
@@ -349,7 +345,6 @@ useEffect(() => {
             onMouseLeave={() => setShowAdminMenu(false)}
           >
             <div style={{ position: "relative" }}>
-
               <div
                 style={{
                   padding: "12px 22px",
@@ -368,7 +363,7 @@ useEffect(() => {
                 Panou Administrație ▼
               </div>
 
-              {pendingCount > 0 && (
+              {(pendingCount > 0 || pendingBorrowCount > 0) && (
                 <div
                   style={{
                     position: "absolute",
@@ -389,37 +384,10 @@ useEffect(() => {
                     boxShadow: "0 0 5px rgba(0,0,0,0.3)",
                   }}
                 >
-                  {pendingCount}
+                  {pendingCount + pendingBorrowCount}
                 </div>
               )}
-
-              {pendingBorrowCount > 0 && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "-5px",
-                    right: "-5px",
-                    minWidth: "22px",
-                    height: "22px",
-                    padding: "0 5px",
-                    backgroundColor: "red",
-                    borderRadius: "50%",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    color: "white",
-                    fontSize: "0.85rem",
-                    fontWeight: "bold",
-                    lineHeight: 1,
-                    boxShadow: "0 0 5px rgba(0,0,0,0.3)",
-                  }}
-                >
-                  {pendingBorrowCount}
-                </div>
-              )}
-
             </div>
-
 
             {showAdminMenu && (
               <div
@@ -432,7 +400,7 @@ useEffect(() => {
                   borderRadius: "12px",
                   padding: "15px 20px",
                   display: "flex",
-                  flexDirection: "column", 
+                  flexDirection: "column",
                   gap: "12px",
                   boxShadow: "0 4px 15px rgba(0,0,0,0.25)",
                   minWidth: "500px",
@@ -489,7 +457,6 @@ useEffect(() => {
                       {pendingCount}
                     </div>
                   )}
-
                 </div>
 
                 <div style={{ position: "relative", width: "100%", display: "flex", justifyContent: "center" }}>
@@ -530,8 +497,6 @@ useEffect(() => {
                     </div>
                   )}
                 </div>
-
-
 
                 <div
                   style={{ position: "relative" }}
@@ -628,9 +593,7 @@ useEffect(() => {
 
         {/* WRAPPER ICONIȚE */}
         <div style={{ display: "flex", alignItems: "center", gap: "5px", marginRight: "80px" }}>
-
           {/* COȘ DE CUMPĂRĂTURI */}
-
           <Link to="/borrow" style={{ position: "relative", textDecoration: "none" }}>
             <div
               style={{
@@ -669,7 +632,6 @@ useEffect(() => {
               )}
             </div>
           </Link>
-
 
           {/* MENIU UTILIZATOR */}
           <div
@@ -715,7 +677,6 @@ useEffect(() => {
             )}
           </div>
         </div>
-
       </nav>
 
       {/* NAVBAR SECUNDAR */}
@@ -812,6 +773,10 @@ useEffect(() => {
         <Link to="/cele-mai-citite" style={subNavLinkStyle}>
           Cele mai citite
         </Link>
+        
+        <Link to="/cele-mai-recomandate" style={subNavLinkStyle}>
+          Cele mai recomandate ⭐
+        </Link>
 
         {!currentUser && (
           <div
@@ -874,7 +839,6 @@ useEffect(() => {
             ✔ Abonament activ
           </div>
         )}
-
       </div>
 
       {/* CONȚINUT PAGINĂ */}
@@ -898,6 +862,7 @@ useEffect(() => {
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/favorites" element={<Favorite />} />
           <Route path="/cele-mai-citite" element={<MostRead />} />
+          <Route path="/cele-mai-recomandate" element={<TopRated />} />
           <Route path="/book/:id" element={<BookDetail />} />
           <Route path="/abonament" element={<Abonament />} />
           <Route path="/admin/confirm-borrow" element={<ConfirmareRezervareCarti />} />
