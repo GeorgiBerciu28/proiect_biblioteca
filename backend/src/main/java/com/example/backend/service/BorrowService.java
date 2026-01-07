@@ -30,7 +30,7 @@ public class BorrowService {
             throw new RuntimeException("Nu mai sunt exemplare disponibile!");
         }
 
-        // Creăm împrumutul
+
         Borrow borrow = new Borrow(
                 userId,
                 bookId,
@@ -41,10 +41,10 @@ public class BorrowService {
 
         borrow.setStatus("active");
         borrow.setBorrowDate(LocalDateTime.now());
-        // Scădem un exemplar
+
         book.setStock(book.getStock() - 1);
 
-        // Actualizăm status
+
         if (book.getStock() == 0) {
             book.setStatus("indisponibil");
         } else {
@@ -129,7 +129,7 @@ public class BorrowService {
         borrow.setBookAuthor(book.getAuthor());
         borrow.setBookImage(book.getImage());
 
-        // Status nou
+
         borrow.setStatus("pending");
 
         LocalDateTime now = LocalDateTime.now();
@@ -161,7 +161,7 @@ public class BorrowService {
             throw new RuntimeException("Cartea nu mai este în stoc pentru confirmare!");
         }
 
-        // Scădem stocul abia ACUM
+
         book.setStock(book.getStock() - 1);
 
         if (book.getStock() == 0) {
@@ -170,10 +170,10 @@ public class BorrowService {
 
         bookRepository.save(book);
 
-        // Convertim rezervarea în împrumut activ
+
         LocalDateTime now = LocalDateTime.now();
         borrow.setStatus("active");
-        borrow.setBorrowDate(now);      // 🔥 ADĂUGAT !!!
+        borrow.setBorrowDate(now);
         borrow.setConfirmDate(now);
         borrow.setDueDate(now.plusDays(14));
 

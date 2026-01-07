@@ -21,6 +21,7 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [favorites, setFavorites] = useState<number[]>([]);
   const [popup, setPopup] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState("");
 
 
   const navigate = useNavigate();
@@ -46,9 +47,32 @@ export default function Home() {
       setUser(JSON.parse(userData));
 
     }
-
-    loadBooks();
+    const savedSort = localStorage.getItem("bookSortOption");
+    if (savedSort) {
+      setSortOption(savedSort);
+      loadBooksSorted(savedSort); // aplică sortarea salvata
+    } else {
+      loadBooks(); // ordinea normală
+    }
+   
   }, []);
+
+  const loadBooksSorted = (sort: string) => {
+  if (!sort) return; // dacă nu s-a ales nimic, nu face fetch
+  setLoading(true);
+  fetch(`http://localhost:8080/books/sorted?sort=${sort}`)
+    .then(res => res.json())
+    .then(data => {
+      setBooks(data);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error("Eroare la fetch sort:", err);
+      setLoading(false);
+    });
+};
+
+
   useEffect(() => {
     if (!user) return;
 
@@ -59,6 +83,8 @@ export default function Home() {
       })
       .catch(err => console.error(err));
   }, [user]);
+
+  
   const addToCart = (book: Book) => {
     const cart: Book[] = JSON.parse(localStorage.getItem("cart") || "[]");
 
@@ -145,6 +171,26 @@ export default function Home() {
             {message}
           </div>
         )}
+        <div style={{ textAlign: "center", marginBottom: "20px" }}>
+          <label htmlFor="sortSelect" style={{ marginRight: "10px", fontWeight: "bold" }}>
+            Sortează alfabetic după:
+          </label>
+          <select
+            id="sortSelect"
+            value={sortOption}
+            onChange={(e) => {
+              const selectedSort = e.target.value;
+              setSortOption(selectedSort);
+              localStorage.setItem("bookSortOption", selectedSort);
+              loadBooksSorted(selectedSort); // doar când se alege ceva
+            }}
+            style={{ padding: "5px 10px", borderRadius: "5px" }}
+          >
+            <option value="">Alege criteriu...</option>
+            <option value="sortByTitle">Titlu</option>
+            <option value="sortByAuthor">Autor</option>
+          </select>
+        </div>
 
         {/* GRID CU CĂRȚI */}
         <div

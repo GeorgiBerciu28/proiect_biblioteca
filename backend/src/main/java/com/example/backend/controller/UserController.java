@@ -14,7 +14,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:5173") // dacă folosești vite
+@CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
 
     @Autowired
@@ -32,12 +32,12 @@ public class UserController {
 
         User user = userOpt.get();
 
-        // schimbare nume / prenume / email
+
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
 
-        // schimbare parola
+
         if (request.getNewPassword() != null && !request.getNewPassword().isEmpty()) {
 
             if (!user.getPassword().equals(request.getOldPassword())) {

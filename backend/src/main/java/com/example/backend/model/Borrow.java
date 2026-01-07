@@ -47,7 +47,7 @@ public class Borrow {
     @Column(name = "status", nullable = false)
     private String status;
 
-    // Constructori
+
     public Borrow() {}
 
     public Borrow(Long userId, Long bookId, String bookTitle, String bookAuthor, String bookImage) {
@@ -58,7 +58,7 @@ public class Borrow {
         this.bookImage = bookImage;
     }
 
-    // Getters și Setters
+
     public Long getId() {
         return id;
     }

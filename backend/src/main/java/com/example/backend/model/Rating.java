@@ -18,12 +18,12 @@ public class Rating {
     private Long bookId;
 
     @Column(name = "rating", nullable = false)
-    private int rating; // 1-5 stele
+    private int rating;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // Constructori
+
     public Rating() {}
 
     public Rating(Long userId, Long bookId, int rating) {
@@ -32,7 +32,7 @@ public class Rating {
         this.rating = rating;
     }
 
-    // Getters și Setters
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

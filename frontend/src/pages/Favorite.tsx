@@ -180,7 +180,7 @@ export default function Favorite() {
             <p style={{ margin: 0, fontWeight: "bold" }}>{fav.book.author}</p>
             <p style={{ margin: 0 }}>An: {fav.book.year}</p>
 
-            
+            <div style={{ display: "flex", gap: "10px", alignItems: "center", marginTop: "10px" }}>
            {fav.book.status === "disponibil" ? (
                       <button
                         onClick={() => addToCart(fav.book)}
@@ -216,22 +216,33 @@ export default function Favorite() {
                         Indisponibilă
                       </button>
                     )}
-             <button
-              onClick={() => removeFavorite(fav.bookId)}
-              style={{
-                 padding: "10px",
-                     background: "red",
-                     color: "white",
-                     border: "none",
-                     borderRadius: "10px",
-                     fontWeight: "bold",
-                     cursor: "pointer",
-                     flexGrow: 1,
-                     marginRight: "10px",
-              }}
-            >
-              Elimină din favorite
-            </button>
+              <button
+                    onClick={() => removeFavorite(fav.bookId)}
+                    style={{
+                      width: "45px",
+                      height: "45px",
+                      borderRadius: "10px",
+                      background: "white",
+                      border: "2px solid #7a0fc4",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    <svg
+                      width="28"
+                      height="28"
+                      viewBox="0 0 24 24"
+                      fill="red"      
+                      stroke="red"    
+                      strokeWidth="2"
+                    >
+                      <path d="M12 21s-7-4.35-10-9.5S4.5 3 7.5 5.5 12 10 12 10s2.5-4.5 5.5-4.5S22 7.5 22 11.5 12 21 12 21z" />
+                    </svg>
+                  </button>
+              </div>    
           </div>
         ))}
       </div>

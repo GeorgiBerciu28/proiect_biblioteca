@@ -8,6 +8,7 @@ import com.example.backend.repository.FavoriteRepository;
 import com.example.backend.service.BorrowService;
 import com.example.backend.service.BookService;
 
+import com.example.backend.strategy.BookSortContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,9 +39,12 @@ public class BookController {
     @Autowired
     private BorrowRepository borrowRepository;
 
+    @Autowired
+    private BookSortContext bookSortContext;
+
     private static final String UPLOAD_DIR = "uploads/";
 
-    // -------------------- ADD BOOK --------------------
+
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<?> addBook(
             @RequestPart("data") AddBookRequest data,
@@ -66,7 +70,7 @@ public class BookController {
                 Files.write(pdfPath, pdf.getBytes());
             }
 
-            // ========= FIX: folosim setters, nu constructor inexistent =========
+
             Book book = new Book();
             book.setTitle(data.getTitle());
             book.setAuthor(data.getAuthor());
@@ -87,7 +91,7 @@ public class BookController {
         }
     }
 
-    // -------------------- GET ALL --------------------
+
     @GetMapping
     public ResponseEntity<?> getAllBooks() {
         try {
@@ -97,13 +101,13 @@ public class BookController {
         }
     }
 
-    // -------------------- GET BY CATEGORY --------------------
+
     @GetMapping("/category/{category}")
     public List<Book> getBooksByCategory(@PathVariable String category) {
         return bookRepository.findByCategory(category);
     }
 
-    // -------------------- SEARCH --------------------
+
     @GetMapping("/search")
     public ResponseEntity<?> searchBooks(@RequestParam String query) {
         try {
@@ -128,17 +132,17 @@ public class BookController {
                 return ResponseEntity.status(404).body("Cartea nu există.");
             }
 
-            // Verificăm dacă există împrumuturi active pentru această carte
+
             long activeBorrows = borrowRepository.countByBookIdAndStatus(id, "active");
             if (activeBorrows > 0) {
                 return ResponseEntity.status(400)
                         .body("Nu poți șterge o carte care este încă împrumutată!");
             }
 
-            // Ștergem toate favoritele acestei cărți
+
             favoriteRepository.deleteByBookId(id);
 
-            // Apoi ștergem cartea
+
             bookRepository.deleteById(id);
 
             return ResponseEntity.ok("Cartea a fost ștearsă.");
@@ -198,7 +202,7 @@ public class BookController {
         }
     }
 
-    // borrow books
+
     @PostMapping("/borrow")
     @CrossOrigin(origins = "http://localhost:5173")
     public ResponseEntity<String> borrowBooks(@RequestBody Map<String, Object> request) {
@@ -231,6 +235,12 @@ public class BookController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Eroare la încărcarea cărții.");
         }
+    }
+    @GetMapping("/sorted")
+    public ResponseEntity<?> getSortedBooks(@RequestParam(defaultValue = "sortByTitle") String sort) {
+        List<Book> books = bookRepository.findAll();
+        List<Book> sortedBooks = bookSortContext.executeStrategy(sort, books);
+        return ResponseEntity.ok(sortedBooks);
     }
 
 }
