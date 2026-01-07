@@ -45,10 +45,14 @@ public class BorrowService {
         book.setStock(book.getStock() - 1);
 
 
-        if (book.getStock() == 0) {
+        /*if (book.getStock() == 0) {
             book.setStatus("indisponibil");
         } else {
             book.setStatus("disponibil");
+        }*/
+
+        if (book.getStock() == 0) {
+            book.setStatus("indisponibil");
         }
 
         bookRepository.save(book);

@@ -19,6 +19,11 @@ public class BookService {
     }
 
     public Book saveBook(Book book) {
+        if (book.getStock() == 0) {
+            book.setStatus("indisponibil");
+        } else if (!book.getStatus().equalsIgnoreCase("imprumutat")) {
+            book.setStatus("disponibil");
+        }
         return bookRepository.save(book);
     }
 
@@ -47,5 +52,6 @@ public class BookService {
 
         return "Împrumut realizat!";
     }
+
 
 }

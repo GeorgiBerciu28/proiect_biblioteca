@@ -170,7 +170,7 @@ public class BookController {
             if (book == null)
                 return ResponseEntity.status(404).body("Cartea nu există.");
 
-            if (!book.getStatus().equals("disponibil")) {
+            if (book.getStatus().equals("imprumutat")) {
                 return ResponseEntity.status(400).body("Nu poți modifica o carte împrumutată!");
             }
 
@@ -194,7 +194,7 @@ public class BookController {
             }
 
 
-            bookRepository.save(book);
+            bookService.saveBook(book);
             return ResponseEntity.ok("Cartea a fost actualizată!");
 
         } catch (Exception e) {
