@@ -94,7 +94,7 @@ export default function EditBook() {
         setMessage(text); 
         return;
       }  
-       // throw new Error();
+       
 
       setMessage("Cartea a fost actualizată!");
       setSelectedBook(null);
@@ -253,7 +253,7 @@ export default function EditBook() {
             style={inputStyle}
           >
             <option value="disponibil">Disponibil</option>
-            <option value="imprumutat">Împrumutat</option>
+            <option value="indisponibil">Indisponibil</option>
           </select>
 
           <input
