@@ -25,7 +25,7 @@
 
 ### Management Dinamic
 - Administratorii pot adăuga, edita și șterge cărți
-- Vizualizarea utilizatorilor și a împrumuturilor prin interfețe intuitive
+- Vizualizarea utilizatorilor 
 
 ## Tehnologii utilizate
 **Backend:** Spring Boot pentru dezvoltarea unor aplicații server-side robuste și scalabile.  
